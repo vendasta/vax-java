@@ -11,7 +11,7 @@ steps:
   volumes:
   - name: key
     path: /key
-- name: gcr.io.cloud-builders/gcloud
+- name: gcr.io/cloud-builders/gcloud
   args:
   - kms
   - decrypt
@@ -23,7 +23,7 @@ steps:
   volumes:
   - name: pass
     path: /pass
-- name: gcr.io.cloud-builders/gcloud
+- name: gcr.io/cloud-builders/gcloud
   args:
   - kms
   - decrypt
