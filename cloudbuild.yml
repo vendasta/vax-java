@@ -35,7 +35,7 @@ steps:
   volumes:
   - name: pass
     path: /pass
-- name: 'gcr.io/repcore-prod/mvn-deploy:3'
+- name: 'gcr.io/repcore-prod/mvn-deploy:4'
   volumes:
   - name: key
     path: /key
