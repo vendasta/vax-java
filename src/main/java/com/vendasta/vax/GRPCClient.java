@@ -4,7 +4,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends VAXClient {
