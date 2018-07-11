@@ -4,8 +4,8 @@
     <artifactId>vax.v1</artifactId>
     <packaging>jar</packaging>
     <version>0.1.0</version>
-    <name>sso</name>
-    <url>http://github.com/vendasta/</url>
+    <name>vax</name>
+    <url>http://github.com/vendasta/vax-java</url>
     <description>
         Vendasta API Extensions
     </description>
