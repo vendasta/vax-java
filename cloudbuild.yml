@@ -1,0 +1,43 @@
+steps:
+- name: gcr.io/cloud-builders/gcloud
+  args:
+  - kms
+  - decrypt
+  - --ciphertext-file=key.enc
+  - --plaintext-file=/key/key.asc
+  - --location=global
+  - --keyring=container-builder
+  - --key=maven
+  volumes:
+  - name: key
+    path: /key
+- name: gcr.io.cloud-builders/gcloud
+  args:
+  - kms
+  - decrypt
+  - --location=global
+  - --keyring=container-builder
+  - --key=oss_sonatype_org-password
+  - --plaintext-file=/pass/password
+  - --ciphertext-file=password.enc
+  volumes:
+  - name: pass
+    path: /pass
+- name: gcr.io.cloud-builders/gcloud
+  args:
+  - kms
+  - decrypt
+  - --location=global
+  - --keyring=container-builder
+  - --key=oss_sonatype_org-password
+  - --plaintext-file=/pass/passphrase
+  - --ciphertext-file=passphrase.enc
+  volumes:
+  - name: pass
+    path: /pass
+- name: 'gcr.io/repcore-prod/mvn-deploy'
+  volumes:
+  - name: key
+    path: /key
+  - name: pass
+    path: /pass
