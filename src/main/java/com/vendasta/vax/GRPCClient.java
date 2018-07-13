@@ -7,26 +7,23 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends VAXClient {
-    private String scope;
     private String host;
     private ManagedChannel channel;
     private boolean secure;
+    private VAXCredentials credentialsManager;
     protected T blockingStub;
 
     public GRPCClient(String host, String scope, boolean secure) {
-        super();
-        this.scope = scope;
-        this.host = host;
-        this.secure = secure;
-        this.createNewBlockingStub();
+        this(host, scope, secure, 10000);
     }
 
-    public GRPCClient(String host, String scope, boolean secure, float defaultTimeout) {
+    public GRPCClient(String host, String scope, boolean secure, float defaultTimeout) throws SDKException {
         super(defaultTimeout);
-        this.scope = scope;
         this.host = host;
         this.secure = secure;
+        credentialsManager = new VAXCredentials(scope);
         this.createNewBlockingStub();
+
     }
 
     private void createNewBlockingStub() {
@@ -61,7 +58,6 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         }
 
         if (options.getIncludeToken()) {
-            VAXCredentials credentialsManager = new VAXCredentials(this.scope);
             blockingStub = blockingStub.withCallCredentials(credentialsManager);
         } else {
             blockingStub = blockingStub.withCallCredentials(null);
