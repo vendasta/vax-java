@@ -1,17 +1,33 @@
 steps:
+- name: gcr.io/cloud-builders/gsutil
+  id: 'ciphers'
+  args:
+  - cp
+  - gs://java-sdk-maven-ciphers/*
+  - /ciphers
+  volumes:
+  - name: ciphers
+    path: /ciphers
+  waitFor: ['-']
 - name: gcr.io/cloud-builders/gcloud
+  id: 'key'
+  waitFor: ['ciphers']
   args:
   - kms
   - decrypt
-  - --ciphertext-file=key.enc
+  - --ciphertext-file=/ciphers/key.enc
   - --plaintext-file=/key/key.asc
   - --location=global
   - --keyring=container-builder
   - --key=maven
   volumes:
+  - name: ciphers
+    path: /ciphers
   - name: key
     path: /key
 - name: gcr.io/cloud-builders/gcloud
+  id: 'password'
+  waitFor: ['ciphers']
   args:
   - kms
   - decrypt
@@ -19,11 +35,15 @@ steps:
   - --keyring=container-builder
   - --key=oss_sonatype_org-password
   - --plaintext-file=/pass/password
-  - --ciphertext-file=password.enc
+  - --ciphertext-file=/ciphers/password.enc
   volumes:
+  - name: ciphers
+    path: /ciphers
   - name: pass
     path: /pass
 - name: gcr.io/cloud-builders/gcloud
+  id: 'passphrase'
+  waitFor: ['ciphers']
   args:
   - kms
   - decrypt
@@ -31,11 +51,14 @@ steps:
   - --keyring=container-builder
   - --key=oss_sonatype_org-password
   - --plaintext-file=/pass/passphrase
-  - --ciphertext-file=passphrase.enc
+  - --ciphertext-file=/ciphers/passphrase.enc
   volumes:
+  - name: ciphers
+    path: /ciphers
   - name: pass
     path: /pass
 - name: 'gcr.io/repcore-prod/mvn-deploy:5'
+  waitFor: ['key', 'password', 'passphrase']
   volumes:
   - name: key
     path: /key

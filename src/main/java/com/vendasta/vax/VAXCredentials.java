@@ -29,7 +29,7 @@ public class VAXCredentials implements CallCredentials {
     private VAXCredentialsManager credentialsManager;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
-    VAXCredentials(String scope) {
+    VAXCredentials(String scope) throws SDKException {
         this.credentialsManager = new VAXCredentialsManager(scope);
     }
 
@@ -139,7 +139,7 @@ public class VAXCredentials implements CallCredentials {
                 SignedJWT signedJWT = SignedJWT.parse(tokenResponse.token);
                 currentTokenExpiry = signedJWT.getJWTClaimsSet().getExpirationTime();
             } catch (Exception e) {
-                throw new CredentialsException("An error occured while fetching the token", e);
+                throw new CredentialsException("An error occurred while fetching the token", e);
             }
         }
 
