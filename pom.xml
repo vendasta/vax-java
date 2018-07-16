@@ -3,7 +3,7 @@
     <groupId>com.vendasta</groupId>
     <artifactId>vax.v1</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <name>vax</name>
     <url>http://github.com/vendasta/vax-java</url>
     <description>
@@ -55,6 +55,11 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.58</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle.openssl</groupId>
+            <artifactId>org.bouncycastle.openssl</artifactId>
             <version>1.58</version>
         </dependency>
         <dependency>
