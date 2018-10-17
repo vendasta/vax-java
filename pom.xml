@@ -3,7 +3,7 @@
     <groupId>com.vendasta</groupId>
     <artifactId>vax.v1</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
     <name>vax</name>
     <url>http://github.com/vendasta/vax-java</url>
     <description>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.3.5</version>
+            <version>4.3.6</version>
         </dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>
