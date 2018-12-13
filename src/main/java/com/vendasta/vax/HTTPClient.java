@@ -12,6 +12,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 public abstract class HTTPClient extends VAXClient {
@@ -30,6 +31,14 @@ public abstract class HTTPClient extends VAXClient {
         this.host = host;
         this.secure = secure;
         this.credentialsManager = new VAXCredentials(scope);
+        this.httpClient = HttpClientBuilder.create().build();
+    }
+
+    public HTTPClient(String host, String scope, InputStream serviceAccount, boolean secure, float defaultTimeout) {
+        super(defaultTimeout);
+        this.host = host;
+        this.secure = secure;
+        this.credentialsManager = new VAXCredentials(scope, serviceAccount);
         this.httpClient = HttpClientBuilder.create().build();
     }
 
