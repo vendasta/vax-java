@@ -30,7 +30,22 @@ public class VAXCredentials implements CallCredentials {
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
     VAXCredentials(String scope) throws SDKException {
-        this.credentialsManager = new VAXCredentialsManager(scope);
+        String serviceAccountPath = System.getenv("VENDASTA_APPLICATION_CREDENTIALS");
+        if (serviceAccountPath == null) {
+            throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
+        }
+
+        InputStream serviceAccount;
+        try {
+            serviceAccount = new FileInputStream(serviceAccountPath);
+        } catch (FileNotFoundException e) {
+            throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable file not found");
+        }
+        this.credentialsManager = new VAXCredentialsManager(scope, serviceAccount);
+    }
+
+    VAXCredentials(String scope, InputStream serviceAccount) throws SDKException {
+        this.credentialsManager = new VAXCredentialsManager(scope, serviceAccount);
     }
 
     @Override
@@ -46,6 +61,9 @@ public class VAXCredentials implements CallCredentials {
         });
     }
 
+    @Override
+    public void thisUsesUnstableApi() {}
+
     public String getAuthorizationToken() {
         return credentialsManager.getAuthorization();
     }
@@ -59,18 +77,7 @@ public class VAXCredentials implements CallCredentials {
         private String currentToken;
         private Date currentTokenExpiry;
 
-        VAXCredentialsManager(String scope) throws SDKException {
-            String serviceAccountPath = System.getenv("VENDASTA_APPLICATION_CREDENTIALS");
-            if (serviceAccountPath == null) {
-                throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
-            }
-
-            InputStream serviceAccount;
-            try {
-                serviceAccount = new FileInputStream(serviceAccountPath);
-            } catch (FileNotFoundException e) {
-                throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable file not found");
-            }
+        VAXCredentialsManager(String scope, InputStream serviceAccount) throws SDKException {
 
             this.scope = scope;
             this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);

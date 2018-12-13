@@ -1,3 +1,6 @@
+# 0.2.0
+- Allow a input stream to be passed to the vax credentials constructor
+
 # 0.1.3
 - Update httpcomponents depedency
 
