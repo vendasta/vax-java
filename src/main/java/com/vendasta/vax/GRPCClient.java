@@ -51,20 +51,21 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
 
     protected <V> V doRequest(String func, com.google.protobuf.AbstractMessage request, RequestOptions.Builder builder) throws SDKException {
         RequestOptions options = this.buildVAXOptions(builder);
+        T stub;
         if (options.getTimeout() > 0) {
-            blockingStub = blockingStub.withDeadlineAfter((long) (options.getTimeout() * 1000), TimeUnit.MICROSECONDS);
+            stub = blockingStub.withDeadlineAfter((long) (options.getTimeout() * 1000), TimeUnit.MICROSECONDS);
         } else {
-            blockingStub = blockingStub.withDeadlineAfter(1, TimeUnit.DAYS);
+            stub = blockingStub.withDeadlineAfter(1, TimeUnit.DAYS);
         }
 
         if (options.getIncludeToken()) {
-            blockingStub = blockingStub.withCallCredentials(credentialsManager);
+            stub = stub.withCallCredentials(credentialsManager);
         } else {
-            blockingStub = blockingStub.withCallCredentials(null);
+            stub = stub.withCallCredentials(null);
         }
 
         try {
-            Object resp = blockingStub.getClass().getMethod(func, request.getClass()).invoke(blockingStub, request);
+            Object resp = stub.getClass().getMethod(func, request.getClass()).invoke(stub, request);
             return (V) resp;
         } catch (InvocationTargetException e) {
             throw new SDKException(e.getTargetException().getMessage());
