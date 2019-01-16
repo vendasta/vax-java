@@ -3,6 +3,7 @@ package com.vendasta.vax;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +24,14 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         this.secure = secure;
         credentialsManager = new VAXCredentials(scope);
         this.createNewBlockingStub();
+    }
 
+    public GRPCClient(String host, String scope, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
+        super(defaultTimeout);
+        this.host = host;
+        this.secure = secure;
+        credentialsManager = new VAXCredentials(scope, serviceAccount);
+        this.createNewBlockingStub();
     }
 
     private void createNewBlockingStub() {
