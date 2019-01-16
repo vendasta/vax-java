@@ -1,3 +1,6 @@
+# 0.1.4
+- Make new instance from blocking stub
+
 # 0.1.3
 - Update httpcomponents depedency
 
