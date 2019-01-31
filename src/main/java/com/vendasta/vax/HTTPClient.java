@@ -1,5 +1,7 @@
 package com.vendasta.vax;
 
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -13,6 +15,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 
 public abstract class HTTPClient extends VAXClient {
@@ -20,7 +23,7 @@ public abstract class HTTPClient extends VAXClient {
     private boolean secure;
     private VAXCredentials credentialsManager;
     private HttpClient httpClient;
-
+    private Gson gson = new Gson();
 
     public HTTPClient(String host, String scope, boolean secure) {
         this(host, scope, secure, 10000);
@@ -55,6 +58,13 @@ public abstract class HTTPClient extends VAXClient {
         }
     }
 
+    class GRPCError {
+        @SerializedName("code")
+        private int code;
+        @SerializedName("message")
+        private String message;
+    }
+
     protected <V extends AbstractMessage.Builder> V doRequest(String path, com.google.protobuf.AbstractMessage req, V responseType, RequestOptions.Builder builder) throws SDKException {
         HttpPost request = new HttpPost(buildUrl(path));
         RequestOptions options = this.buildVAXOptions(builder);
@@ -81,19 +91,24 @@ public abstract class HTTPClient extends VAXClient {
         request.addHeader("content-type", "application/json");
         request.setEntity(params);
         String responseAsString;
+        HttpResponse response;
         try {
-            HttpResponse response = httpClient.execute(request);
+            response = httpClient.execute(request);
             responseAsString = EntityUtils.toString(response.getEntity());
         } catch (IOException e) {
             throw new SDKException(e.getMessage());
         }
 
-        try {
-            JsonFormat.parser().merge(responseAsString, responseType);
-            return responseType;
-        } catch (InvalidProtocolBufferException e) {
-            throw new SDKException(e.getMessage());
+        if (response.getStatusLine().getStatusCode() == 200) {
+            try {
+                JsonFormat.parser().merge(responseAsString, responseType);
+                return responseType;
+            } catch (InvalidProtocolBufferException e) {
+                throw new SDKException(e.getMessage());
+            }
+        } else {
+            GRPCError err = gson.fromJson(responseAsString, GRPCError.class);
+            throw new SDKException(err.message);
         }
-
     }
 }
