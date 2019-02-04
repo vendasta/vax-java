@@ -1,0 +1,5 @@
+services:
+ - name: vax-java
+   language: java
+   owner: no-owner
+   nonServiceType: library
