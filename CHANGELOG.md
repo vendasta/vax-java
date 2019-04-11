@@ -1,3 +1,6 @@
+# 0.2.3
+- HTTP client ignores unknown field when parsing from json to protobuf
+
 # 0.2.1
 - Make new instance from blocking stub
 
