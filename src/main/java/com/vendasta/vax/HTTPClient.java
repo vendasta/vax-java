@@ -3,6 +3,7 @@ package com.vendasta.vax;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.DiscardUnknownFieldsParser;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import org.apache.http.HttpResponse;
@@ -101,7 +102,7 @@ public abstract class HTTPClient extends VAXClient {
 
         if (response.getStatusLine().getStatusCode() == 200) {
             try {
-                JsonFormat.parser().merge(responseAsString, responseType);
+                JsonFormat.parser().ignoringUnknownFields().merge(responseAsString, responseType);
                 return responseType;
             } catch (InvalidProtocolBufferException e) {
                 throw new SDKException(e.getMessage());
