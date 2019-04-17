@@ -64,6 +64,14 @@ public abstract class HTTPClient extends VAXClient {
         private int code;
         @SerializedName("message")
         private String message;
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 
     protected <V extends AbstractMessage.Builder> V doRequest(String path, com.google.protobuf.AbstractMessage req, V responseType, RequestOptions.Builder builder) throws SDKException {
@@ -100,7 +108,7 @@ public abstract class HTTPClient extends VAXClient {
             throw new SDKException(e.getMessage());
         }
 
-        if (response.getStatusLine().getStatusCode() == 200) {
+        if (response.getStatusLine().getStatusCode() < 400) {
             try {
                 JsonFormat.parser().ignoringUnknownFields().merge(responseAsString, responseType);
                 return responseType;
@@ -109,7 +117,7 @@ public abstract class HTTPClient extends VAXClient {
             }
         } else {
             GRPCError err = gson.fromJson(responseAsString, GRPCError.class);
-            throw new SDKException(err.message);
+            throw new SDKException(err.getMessage(), err.getCode());
         }
     }
 }

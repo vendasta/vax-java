@@ -12,19 +12,32 @@ public class SDKException extends RuntimeException {
 
     public SDKException(String message) {
         super(message);
+        status = io.grpc.Status.UNAVAILABLE;
+    }
+
+    public SDKException(String message, SDKException e) {
+        super(message, e);
+        status = e.getStatus();
     }
 
     public SDKException(String message, Throwable t) {
         super(message, t);
+        status = io.grpc.Status.UNAVAILABLE;
     }
 
     public SDKException(Throwable t) {
         super(t);
+        status = io.grpc.Status.UNAVAILABLE;
     }
 
     public SDKException(String message, io.grpc.StatusRuntimeException t) {
         super(message, t);
         status = t.getStatus();
+    }
+
+    public SDKException(String message, int grpcStatusCode) {
+        super(message);
+        status = io.grpc.Status.fromCodeValue(grpcStatusCode);
     }
 
     /**
