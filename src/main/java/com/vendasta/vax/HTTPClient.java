@@ -64,13 +64,6 @@ public abstract class HTTPClient extends VAXClient {
         private int code;
         @SerializedName("message")
         private String message;
-    }
-
-    class HTTPError {
-        @SerializedName("code")
-        private int code;
-        @SerializedName("message")
-        private String message;
 
         public int getCode() {
             return code;
@@ -123,7 +116,7 @@ public abstract class HTTPClient extends VAXClient {
                 throw new SDKException(e.getMessage());
             }
         } else {
-            HTTPError err = gson.fromJson(responseAsString, HTTPError.class);
+            GRPCError err = gson.fromJson(responseAsString, GRPCError.class);
             throw new SDKException(err.getMessage(), err.getCode());
         }
     }

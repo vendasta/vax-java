@@ -15,12 +15,19 @@ public class SDKException extends RuntimeException {
         status = io.grpc.Status.UNAVAILABLE;
     }
 
+    public SDKException(String message, SDKException e) {
+        super(message, e);
+        status = e.getStatus();
+    }
+
     public SDKException(String message, Throwable t) {
         super(message, t);
+        status = io.grpc.Status.UNAVAILABLE;
     }
 
     public SDKException(Throwable t) {
         super(t);
+        status = io.grpc.Status.UNAVAILABLE;
     }
 
     public SDKException(String message, io.grpc.StatusRuntimeException t) {
@@ -28,9 +35,9 @@ public class SDKException extends RuntimeException {
         status = t.getStatus();
     }
 
-    public SDKException(String message, int httpStatusCode) {
+    public SDKException(String message, int grpcStatusCode) {
         super(message);
-        status = httpStatusCodeToGRPCStatusCode(httpStatusCode);
+        status = io.grpc.Status.fromCodeValue(grpcStatusCode);
     }
 
     /**
@@ -40,26 +47,5 @@ public class SDKException extends RuntimeException {
      */
     public io.grpc.Status getStatus(){
         return status;
-    }
-
-    private io.grpc.Status httpStatusCodeToGRPCStatusCode(int httpStatusCode) {
-        switch(httpStatusCode) {
-            case 400:
-                return io.grpc.Status.INVALID_ARGUMENT;
-            case 401:
-                return io.grpc.Status.UNAUTHENTICATED;
-            case 403:
-                return io.grpc.Status.PERMISSION_DENIED;
-            case 404:
-                return io.grpc.Status.NOT_FOUND;
-            case 409:
-                return io.grpc.Status.ALREADY_EXISTS;
-            case 412:
-                return io.grpc.Status.FAILED_PRECONDITION;
-            case 429:
-                return io.grpc.Status.RESOURCE_EXHAUSTED;
-            default:
-                return io.grpc.Status.UNAVAILABLE;
-        }
     }
 }
