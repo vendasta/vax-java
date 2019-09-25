@@ -1,5 +1,5 @@
 services:
  - name: vax-java
    language: java
-   owner: no-owner
+   owner: teamy-mcteamface
    nonServiceType: library
