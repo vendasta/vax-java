@@ -25,7 +25,7 @@ import java.util.Date;
 import java.util.concurrent.Executor;
 
 
-public class VAXCredentials implements CallCredentials {
+public class VAXCredentials extends CallCredentials {
     private VAXCredentialsManager credentialsManager;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
@@ -49,7 +49,7 @@ public class VAXCredentials implements CallCredentials {
     }
 
     @Override
-    public void applyRequestMetadata(MethodDescriptor<?, ?> methodDescriptor, Attributes attributes, Executor executor, final MetadataApplier metadataApplier) {
+    public void applyRequestMetadata(RequestInfo requestInfo, Executor executor, MetadataApplier metadataApplier) {
         executor.execute(() -> {
             try {
                 Metadata headers = new Metadata();
