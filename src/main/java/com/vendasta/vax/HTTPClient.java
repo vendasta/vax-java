@@ -64,6 +64,7 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
     public void close() {
         // HttpClient in Java 11+ doesn't require explicit closing, but we implement this for consistency
         // The connection pool will be cleaned up when the HttpClient is garbage collected
+        // This is needed to satisfy the AutoCloseable interface
     }
 
     private URI buildUrl(String path) throws SDKException {
