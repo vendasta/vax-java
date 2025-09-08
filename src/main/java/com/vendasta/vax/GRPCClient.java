@@ -125,31 +125,6 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         return stub;
     }
 
-
-    /**
-     * @deprecated This method is deprecated. Use {@link #doRequest(Function, RequestOptions.Builder)} instead.
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    protected <V> V doRequest(String func, com.google.protobuf.AbstractMessage request, RequestOptions.Builder builder) throws SDKException {
-        Objects.requireNonNull(func, "Function name cannot be null");
-        Objects.requireNonNull(request, "Request cannot be null");
-        Objects.requireNonNull(builder, "Request options builder cannot be null");
-        
-        RequestOptions options = this.buildVAXOptions(builder);
-        T stub = configureStub(options);
-
-        try {
-            Object resp = stub.getClass().getMethod(func, request.getClass()).invoke(stub, request);
-            return (V) resp;
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getTargetException();
-            throw new SDKException("gRPC call failed: " + (cause != null ? cause.getMessage() : "Unknown error"), cause);
-        } catch (Exception e) {
-            throw new SDKException("Failed to invoke gRPC method '" + func + "': " + e.getMessage(), e);
-        }
-    }
-
     /**
      * Executes a gRPC request using a type-safe function approach.
      * This is the recommended method for making gRPC calls as it provides compile-time type safety

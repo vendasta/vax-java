@@ -27,7 +27,6 @@
 - Updated Maven plugins to latest versions
 - Extracted magic numbers to constants for better maintainability
 - Improved default timeouts (10 minutes instead of 1 day)
-- Maintained backwards compatibility for GRPCClient through method overloading
 - Removed deprecated VAXCredentials.thisUsesUnstableApi() method
 - Better code organization and import structure
 
