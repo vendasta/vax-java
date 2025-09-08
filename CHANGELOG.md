@@ -1,4 +1,4 @@
-# 0.3.0
+# 1.0.0
 
 **BREAKING CHANGES:**
 - **Java 21 Required**: Upgraded minimum Java version from 8 to 21

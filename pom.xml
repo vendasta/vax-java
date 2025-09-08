@@ -3,7 +3,7 @@
     <groupId>com.vendasta</groupId>
     <artifactId>vax.v1</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.0-rc1</version>
+    <version>1.0.0-rc1</version>
     <name>vax</name>
     <url>http://github.com/vendasta/vax-java</url>
     <description>
