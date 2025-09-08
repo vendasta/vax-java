@@ -1,14 +1,17 @@
 package com.vendasta.vax;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
-import io.grpc.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.security.KeyPair;
+import java.security.Security;
+import java.security.interfaces.ECPrivateKey;
+import java.util.Date;
+import java.util.concurrent.Executor;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -17,12 +20,18 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.bouncycastle.openssl.PEMException;
 
-import java.io.*;
-import java.security.KeyPair;
-import java.security.Security;
-import java.security.interfaces.ECPrivateKey;
-import java.util.Date;
-import java.util.concurrent.Executor;
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.ECDSASigner;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+
+import io.grpc.CallCredentials;
+import io.grpc.Metadata;
+import io.grpc.Status;
 
 
 public class VAXCredentials extends CallCredentials {
@@ -61,8 +70,6 @@ public class VAXCredentials extends CallCredentials {
         });
     }
 
-    @Override
-    public void thisUsesUnstableApi() {}
 
     public String getAuthorizationToken() {
         return credentialsManager.getAuthorization();

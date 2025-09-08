@@ -1,11 +1,11 @@
 package com.vendasta.vax;
 
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.TimeUnit;
 
 public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends VAXClient {
     private String host;
@@ -57,7 +57,7 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
     protected abstract T newBlockingStub(ManagedChannel channel);
 
 
-    protected <V> V doRequest(String func, com.google.protobuf.AbstractMessage request, RequestOptions.Builder builder) throws SDKException {
+    protected <V> V doRequest(Function<T, V> methodCall, RequestOptions.Builder builder) throws SDKException {
         RequestOptions options = this.buildVAXOptions(builder);
         T stub;
         if (options.getTimeout() > 0) {
@@ -73,10 +73,8 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         }
 
         try {
-            Object resp = stub.getClass().getMethod(func, request.getClass()).invoke(stub, request);
-            return (V) resp;
-        } catch (InvocationTargetException e) {
-            throw new SDKException(e.getTargetException().getMessage());
+            // No reflection needed - direct method call with full type safety
+            return methodCall.apply(stub);
         } catch (Exception e) {
             throw new SDKException(e.getMessage());
         }

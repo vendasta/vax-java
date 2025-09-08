@@ -1,11 +1,9 @@
 package com.vendasta.vax;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-import com.google.protobuf.AbstractMessage;
-import com.google.protobuf.DiscardUnknownFieldsParser;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.util.JsonFormat;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -14,10 +12,11 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 
 public abstract class HTTPClient extends VAXClient {
     private String host;
