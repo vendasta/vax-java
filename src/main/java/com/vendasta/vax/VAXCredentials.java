@@ -6,18 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
+import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.Executor;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.bouncycastle.openssl.PEMException;
 
 import com.google.gson.Gson;
@@ -142,6 +141,7 @@ public class VAXCredentials extends CallCredentials {
         private ECPrivateKey privateKey;
         private String currentToken;
         private Date currentTokenExpiry;
+        private HttpClient httpClient;
 
         VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
             this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);
@@ -156,6 +156,11 @@ public class VAXCredentials extends CallCredentials {
         private void initializeCredentials() throws SDKException {
             this.currentToken = null;
             this.currentTokenExpiry = null;
+            
+            // Initialize HTTP client with reasonable timeout
+            this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
 
             Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
             StringReader reader = new StringReader(creds.privateKey);
@@ -205,21 +210,38 @@ public class VAXCredentials extends CallCredentials {
                 throw new CredentialsException("Something went wrong with building the credentials", e);
             }
 
-            HttpClient httpClient = HttpClientBuilder.create().build();
-
             try {
-                HttpPost request = new HttpPost(creds.tokenURI);
-                StringEntity params = new StringEntity("{\"token\":\"" + jwtAccess + "\"}");
-                request.addHeader("content-type", "application/json");
-                request.setEntity(params);
-                HttpResponse response = httpClient.execute(request);
-                String responseAsString = EntityUtils.toString(response.getEntity());
-                GetTokenResponse tokenResponse = gson.fromJson(responseAsString, GetTokenResponse.class);
+                String requestBody = "{\"token\":\"" + jwtAccess + "\"}";
+                
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(creds.tokenURI))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+                
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                
+                if (response.statusCode() >= 400) {
+                    throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body());
+                }
+                
+                String responseBody = response.body();
+                GetTokenResponse tokenResponse = gson.fromJson(responseBody, GetTokenResponse.class);
+                if (tokenResponse == null || tokenResponse.token == null) {
+                    throw new CredentialsException("Invalid response: missing token");
+                }
+                
                 currentToken = "Bearer " + tokenResponse.token;
                 SignedJWT signedJWT = SignedJWT.parse(tokenResponse.token);
                 currentTokenExpiry = signedJWT.getJWTClaimsSet().getExpirationTime();
+            } catch (IOException e) {
+                throw new CredentialsException("Network error during token refresh: " + e.getMessage(), e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CredentialsException("Token refresh was interrupted: " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new CredentialsException("An error occurred while fetching the token", e);
+                throw new CredentialsException("An error occurred while fetching the token: " + e.getMessage(), e);
             }
         }
 

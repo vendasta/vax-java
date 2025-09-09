@@ -46,21 +46,10 @@
             <artifactId>grpc-stub</artifactId>
             <version>1.58.0</version>
         </dependency>
-        <dependency> <!-- necessary for Java 9+ -->
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>annotations-api</artifactId>
-            <version>6.0.53</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
             <version>3.24.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auth</groupId>
-            <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.19.0</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -71,11 +60,6 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
             <version>1.70</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.14</version>
         </dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>
