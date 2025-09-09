@@ -21,42 +21,80 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
     private ManagedChannel channel;
     protected T blockingStub;
 
-    public GRPCClient(String host, boolean secure) throws SDKException {
-        this(host, secure, 10000);
-    }
-
-    public GRPCClient(String host, boolean secure, float defaultTimeout) throws SDKException {
-        super(defaultTimeout);
-        this.host = Objects.requireNonNull(host, "Host cannot be null");
-        if (host.trim().isEmpty()) {
+    // Private constructor used by Builder
+    private GRPCClient(Builder builder) throws SDKException {
+        super(builder.defaultTimeout);
+        this.host = Objects.requireNonNull(builder.host, "Host cannot be null");
+        if (builder.host.trim().isEmpty()) {
             throw new SDKException("Host cannot be empty");
         }
-        this.secure = secure;
+        this.secure = builder.secure;
         
         try {
-            this.credentialsManager = new VAXCredentials();
+            // Initialize credentials based on what was provided
+            if (builder.credentials != null) {
+                this.credentialsManager = new VAXCredentials(builder.credentials);
+            } else if (builder.serviceAccount != null) {
+                this.credentialsManager = new VAXCredentials(builder.serviceAccount);
+            } else {
+                this.credentialsManager = new VAXCredentials();
+            }
             this.initializeChannel();
         } catch (Exception e) {
             throw new SDKException("Failed to initialize gRPC client: " + e.getMessage(), e);
         }
     }
 
-    public GRPCClient(String host, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
-        super(defaultTimeout);
-        this.host = Objects.requireNonNull(host, "Host cannot be null");
-        if (host.trim().isEmpty()) {
-            throw new SDKException("Host cannot be empty");
+    public static class Builder {
+        private String host;
+        private boolean secure = true; // Default to secure
+        private float defaultTimeout = 10000; // Default timeout
+        private VAXCredentials.Credentials credentials;
+        private InputStream serviceAccount;
+
+        public Builder host(String host) {
+            this.host = host;
+            return this;
         }
-        this.secure = secure;
-        
-        Objects.requireNonNull(serviceAccount, "Service account input stream cannot be null");
-        
-        try {
-            this.credentialsManager = new VAXCredentials(serviceAccount);
-            this.initializeChannel();
-        } catch (Exception e) {
-            throw new SDKException("Failed to initialize gRPC client: " + e.getMessage(), e);
+
+        public Builder secure(boolean secure) {
+            this.secure = secure;
+            return this;
         }
+
+        public Builder defaultTimeout(float defaultTimeout) {
+            this.defaultTimeout = defaultTimeout;
+            return this;
+        }
+
+        public Builder credentials(VAXCredentials.Credentials credentials) {
+            this.credentials = credentials;
+            this.serviceAccount = null; // Clear other credential source
+            return this;
+        }
+
+        public Builder serviceAccount(InputStream serviceAccount) {
+            this.serviceAccount = serviceAccount;
+            this.credentials = null; // Clear other credential source
+            return this;
+        }
+
+        public <T extends io.grpc.stub.AbstractStub<T>> GRPCClient<T> build() throws SDKException {
+            if (host == null || host.trim().isEmpty()) {
+                throw new SDKException("Host cannot be null or empty");
+            }
+            return new GRPCClient<T>(this) {
+                @Override
+                protected T newBlockingStub(ManagedChannel channel) {
+                    // This will be implemented by concrete subclasses
+                    throw new UnsupportedOperationException("newBlockingStub must be implemented by subclass");
+                }
+            };
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     private void initializeChannel() {

@@ -25,32 +25,70 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
     private final VAXCredentials credentialsManager;
     private final HttpClient httpClient;
 
-    public HTTPClient(String host, boolean secure) throws SDKException {
-        this(host, secure, 10000);
-    }
-
-    public HTTPClient(String host, boolean secure, float defaultTimeout) throws SDKException {
-        super(defaultTimeout);
-        this.host = Objects.requireNonNull(host, "Host cannot be null");
-        this.secure = secure;
+    // Private constructor used by Builder
+    private HTTPClient(Builder builder) throws SDKException {
+        super(builder.defaultTimeout);
+        this.host = Objects.requireNonNull(builder.host, "Host cannot be null");
+        this.secure = builder.secure;
         
-        this.credentialsManager = new VAXCredentials();
+        // Initialize credentials based on what was provided
+        if (builder.credentials != null) {
+            this.credentialsManager = new VAXCredentials(builder.credentials);
+        } else if (builder.serviceAccount != null) {
+            this.credentialsManager = new VAXCredentials(builder.serviceAccount);
+        } else {
+            this.credentialsManager = new VAXCredentials();
+        }
+        
         this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis((long)(defaultTimeout * 1000)))
+            .connectTimeout(Duration.ofMillis((long)(builder.defaultTimeout * 1000)))
             .build();
     }
 
-    public HTTPClient(String host, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
-        super(defaultTimeout);
-        this.host = Objects.requireNonNull(host, "Host cannot be null");
-        this.secure = secure;
-        
-        Objects.requireNonNull(serviceAccount, "Service account input stream cannot be null");
-        
-        this.credentialsManager = new VAXCredentials(serviceAccount);
-        this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis((long)(defaultTimeout * 1000)))
-            .build();
+    public static class Builder {
+        private String host;
+        private boolean secure = true; // Default to secure
+        private float defaultTimeout = 10000; // Default timeout
+        private VAXCredentials.Credentials credentials;
+        private InputStream serviceAccount;
+
+        public Builder host(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder secure(boolean secure) {
+            this.secure = secure;
+            return this;
+        }
+
+        public Builder defaultTimeout(float defaultTimeout) {
+            this.defaultTimeout = defaultTimeout;
+            return this;
+        }
+
+        public Builder credentials(VAXCredentials.Credentials credentials) {
+            this.credentials = credentials;
+            this.serviceAccount = null; // Clear other credential source
+            return this;
+        }
+
+        public Builder serviceAccount(InputStream serviceAccount) {
+            this.serviceAccount = serviceAccount;
+            this.credentials = null; // Clear other credential source
+            return this;
+        }
+
+        public HTTPClient build() throws SDKException {
+            if (host == null || host.trim().isEmpty()) {
+                throw new SDKException("Host cannot be null or empty");
+            }
+            return new HTTPClient(this) {};
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override

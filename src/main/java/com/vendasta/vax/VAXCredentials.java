@@ -57,6 +57,10 @@ public class VAXCredentials extends CallCredentials {
         this.credentialsManager = new VAXCredentialsManager(serviceAccount);
     }
 
+    VAXCredentials(Credentials credentials) throws SDKException {
+        this.credentialsManager = new VAXCredentialsManager(credentials);
+    }
+
     @Override
     public void applyRequestMetadata(RequestInfo requestInfo, Executor executor, MetadataApplier metadataApplier) {
         executor.execute(() -> {
@@ -75,6 +79,62 @@ public class VAXCredentials extends CallCredentials {
         return credentialsManager.getAuthorization();
     }
 
+    public static class Credentials {
+        @SerializedName("private_key_id")
+        private String privateKeyID;
+        @SerializedName("private_key")
+        private String privateKey;
+        @SerializedName("client_email")
+        private String email;
+        @SerializedName("token_uri")
+        private String tokenURI;
+
+        // Default constructor for JSON deserialization
+        public Credentials() {}
+
+        // Constructor with all fields
+        public Credentials(String privateKeyID, String privateKey, String email, String tokenURI) {
+            this.privateKeyID = privateKeyID;
+            this.privateKey = privateKey;
+            this.email = email;
+            this.tokenURI = tokenURI;
+        }
+
+        // Getters
+        public String getPrivateKeyID() {
+            return privateKeyID;
+        }
+
+        public String getPrivateKey() {
+            return privateKey;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getTokenURI() {
+            return tokenURI;
+        }
+
+        // Setters
+        public void setPrivateKeyID(String privateKeyID) {
+            this.privateKeyID = privateKeyID;
+        }
+
+        public void setPrivateKey(String privateKey) {
+            this.privateKey = privateKey;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public void setTokenURI(String tokenURI) {
+            this.tokenURI = tokenURI;
+        }
+    }
+
 
     private class VAXCredentialsManager {
         private Gson gson = new Gson();
@@ -85,6 +145,15 @@ public class VAXCredentials extends CallCredentials {
 
         VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
             this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);
+            this.initializeCredentials();
+        }
+
+        VAXCredentialsManager(Credentials credentials) throws SDKException {
+            this.creds = credentials;
+            this.initializeCredentials();
+        }
+
+        private void initializeCredentials() throws SDKException {
             this.currentToken = null;
             this.currentTokenExpiry = null;
 
@@ -181,16 +250,6 @@ public class VAXCredentials extends CallCredentials {
             return signedJWT.serialize();
         }
 
-        class Credentials {
-            @SerializedName("private_key_id")
-            private String privateKeyID;
-            @SerializedName("private_key")
-            private String privateKey;
-            @SerializedName("client_email")
-            private String email;
-            @SerializedName("token_uri")
-            private String tokenURI;
-        }
 
         class GetTokenResponse {
             private String token;
