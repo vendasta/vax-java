@@ -25,36 +25,29 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
     private final VAXCredentials credentialsManager;
     private final HttpClient httpClient;
 
-    public HTTPClient(String host, String scope, boolean secure) throws SDKException {
-        this(host, scope, secure, 10000);
+    public HTTPClient(String host, boolean secure) throws SDKException {
+        this(host, secure, 10000);
     }
 
-    public HTTPClient(String host, String scope, boolean secure, float defaultTimeout) throws SDKException {
+    public HTTPClient(String host, boolean secure, float defaultTimeout) throws SDKException {
         super(defaultTimeout);
         this.host = Objects.requireNonNull(host, "Host cannot be null");
         this.secure = secure;
         
-        if (scope == null || scope.trim().isEmpty()) {
-            throw new SDKException("Scope cannot be null or empty");
-        }
-        
-        this.credentialsManager = new VAXCredentials(scope);
+        this.credentialsManager = new VAXCredentials();
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofMillis((long)(defaultTimeout * 1000)))
             .build();
     }
 
-    public HTTPClient(String host, String scope, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
+    public HTTPClient(String host, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
         super(defaultTimeout);
         this.host = Objects.requireNonNull(host, "Host cannot be null");
         this.secure = secure;
         
-        if (scope == null || scope.trim().isEmpty()) {
-            throw new SDKException("Scope cannot be null or empty");
-        }
         Objects.requireNonNull(serviceAccount, "Service account input stream cannot be null");
         
-        this.credentialsManager = new VAXCredentials(scope, serviceAccount);
+        this.credentialsManager = new VAXCredentials(serviceAccount);
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofMillis((long)(defaultTimeout * 1000)))
             .build();

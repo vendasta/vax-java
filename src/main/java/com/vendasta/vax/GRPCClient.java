@@ -1,7 +1,6 @@
 package com.vendasta.vax;
 
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -22,11 +21,11 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
     private ManagedChannel channel;
     protected T blockingStub;
 
-    public GRPCClient(String host, String scope, boolean secure) throws SDKException {
-        this(host, scope, secure, 10000);
+    public GRPCClient(String host, boolean secure) throws SDKException {
+        this(host, secure, 10000);
     }
 
-    public GRPCClient(String host, String scope, boolean secure, float defaultTimeout) throws SDKException {
+    public GRPCClient(String host, boolean secure, float defaultTimeout) throws SDKException {
         super(defaultTimeout);
         this.host = Objects.requireNonNull(host, "Host cannot be null");
         if (host.trim().isEmpty()) {
@@ -34,19 +33,15 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         }
         this.secure = secure;
         
-        if (scope == null || scope.trim().isEmpty()) {
-            throw new SDKException("Scope cannot be null or empty");
-        }
-        
         try {
-            this.credentialsManager = new VAXCredentials(scope);
+            this.credentialsManager = new VAXCredentials();
             this.initializeChannel();
         } catch (Exception e) {
             throw new SDKException("Failed to initialize gRPC client: " + e.getMessage(), e);
         }
     }
 
-    public GRPCClient(String host, String scope, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
+    public GRPCClient(String host, InputStream serviceAccount, boolean secure, float defaultTimeout) throws SDKException {
         super(defaultTimeout);
         this.host = Objects.requireNonNull(host, "Host cannot be null");
         if (host.trim().isEmpty()) {
@@ -54,13 +49,10 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         }
         this.secure = secure;
         
-        if (scope == null || scope.trim().isEmpty()) {
-            throw new SDKException("Scope cannot be null or empty");
-        }
         Objects.requireNonNull(serviceAccount, "Service account input stream cannot be null");
         
         try {
-            this.credentialsManager = new VAXCredentials(scope, serviceAccount);
+            this.credentialsManager = new VAXCredentials(serviceAccount);
             this.initializeChannel();
         } catch (Exception e) {
             throw new SDKException("Failed to initialize gRPC client: " + e.getMessage(), e);

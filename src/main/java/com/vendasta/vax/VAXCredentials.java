@@ -38,7 +38,7 @@ public class VAXCredentials extends CallCredentials {
     private VAXCredentialsManager credentialsManager;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
-    VAXCredentials(String scope) throws SDKException {
+    VAXCredentials() throws SDKException {
         String serviceAccountPath = System.getenv("VENDASTA_APPLICATION_CREDENTIALS");
         if (serviceAccountPath == null) {
             throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
@@ -50,11 +50,11 @@ public class VAXCredentials extends CallCredentials {
         } catch (FileNotFoundException e) {
             throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable file not found");
         }
-        this.credentialsManager = new VAXCredentialsManager(scope, serviceAccount);
+        this.credentialsManager = new VAXCredentialsManager(serviceAccount);
     }
 
-    VAXCredentials(String scope, InputStream serviceAccount) throws SDKException {
-        this.credentialsManager = new VAXCredentialsManager(scope, serviceAccount);
+    VAXCredentials(InputStream serviceAccount) throws SDKException {
+        this.credentialsManager = new VAXCredentialsManager(serviceAccount);
     }
 
     @Override
@@ -78,15 +78,12 @@ public class VAXCredentials extends CallCredentials {
 
     private class VAXCredentialsManager {
         private Gson gson = new Gson();
-        private String scope;
         private Credentials creds;
         private ECPrivateKey privateKey;
         private String currentToken;
         private Date currentTokenExpiry;
 
-        VAXCredentialsManager(String scope, InputStream serviceAccount) throws SDKException {
-
-            this.scope = scope;
+        VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
             this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);
             this.currentToken = null;
             this.currentTokenExpiry = null;
