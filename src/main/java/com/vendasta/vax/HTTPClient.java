@@ -62,6 +62,9 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
 
     /**
      * Builder for configuring HTTPClient instances.
+     * 
+     * <p>Provides a fluent interface for setting HTTP client configuration
+     * including host, security, timeout, and authentication settings.
      */
     public static class Builder {
         private String host;
@@ -69,6 +72,11 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
         private float defaultTimeout = 10000; // Default timeout
         private VAXCredentials.Credentials credentials;
         private InputStream serviceAccount;
+        
+        /**
+         * Creates a new builder instance.
+         */
+        public Builder() {}
 
         /**
          * Sets the hostname for the HTTP client.

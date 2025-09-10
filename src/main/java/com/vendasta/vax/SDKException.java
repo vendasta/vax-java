@@ -27,6 +27,12 @@ public class SDKException extends RuntimeException {
         status = io.grpc.Status.UNAVAILABLE;
     }
 
+    /**
+     * Creates a new SDK exception wrapping another SDK exception.
+     * 
+     * @param message the error message
+     * @param e the underlying SDK exception
+     */
     public SDKException(String message, SDKException e) {
         super(message, e);
         status = e.getStatus();
@@ -43,16 +49,33 @@ public class SDKException extends RuntimeException {
         status = io.grpc.Status.UNAVAILABLE;
     }
 
+    /**
+     * Creates a new SDK exception with the specified cause.
+     * 
+     * @param t the underlying cause
+     */
     public SDKException(Throwable t) {
         super(t);
         status = io.grpc.Status.UNAVAILABLE;
     }
 
+    /**
+     * Creates a new SDK exception from a gRPC status runtime exception.
+     * 
+     * @param message the error message
+     * @param t the gRPC status runtime exception
+     */
     public SDKException(String message, io.grpc.StatusRuntimeException t) {
         super(message, t);
         status = t.getStatus();
     }
 
+    /**
+     * Creates a new SDK exception with a specific gRPC status code.
+     * 
+     * @param message the error message
+     * @param grpcStatusCode the gRPC status code
+     */
     public SDKException(String message, int grpcStatusCode) {
         super(message);
         status = io.grpc.Status.fromCodeValue(grpcStatusCode);

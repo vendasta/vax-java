@@ -8,6 +8,15 @@ import java.util.function.Function;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+/**
+ * Abstract gRPC client for making gRPC requests to VAX services.
+ * 
+ * <p>This client provides a fluent builder pattern for configuration and supports
+ * various authentication methods including environment variables, credential objects,
+ * and service account streams.
+ * 
+ * @param <T> the type of gRPC stub this client manages
+ */
 public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends VAXClient implements AutoCloseable {
     // Constants for configuration
     private static final int SECURE_PORT = 443;
@@ -19,6 +28,9 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
     private final boolean secure;
     private final VAXCredentials credentialsManager;
     private ManagedChannel channel;
+    /**
+     * The configured gRPC blocking stub for making synchronous calls.
+     */
     protected T blockingStub;
 
     // Private constructor used by Builder
@@ -45,40 +57,88 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         }
     }
 
+    /**
+     * Builder for configuring GRPCClient instances.
+     * 
+     * <p>Provides a fluent interface for setting gRPC client configuration
+     * including host, security, timeout, and authentication settings.
+     */
     public static class Builder {
         private String host;
         private boolean secure = true; // Default to secure
         private float defaultTimeout = 10000; // Default timeout
         private VAXCredentials.Credentials credentials;
         private InputStream serviceAccount;
+        
+        /**
+         * Creates a new builder instance.
+         */
+        public Builder() {}
 
+        /**
+         * Sets the hostname for the gRPC client.
+         * 
+         * @param host the hostname (required)
+         * @return this builder instance
+         */
         public Builder host(String host) {
             this.host = host;
             return this;
         }
 
+        /**
+         * Sets whether to use secure gRPC (TLS).
+         * 
+         * @param secure true for secure gRPC, false for insecure gRPC (default: true)
+         * @return this builder instance
+         */
         public Builder secure(boolean secure) {
             this.secure = secure;
             return this;
         }
 
+        /**
+         * Sets the default timeout for gRPC requests.
+         * 
+         * @param defaultTimeout timeout in milliseconds (default: 10000)
+         * @return this builder instance
+         */
         public Builder defaultTimeout(float defaultTimeout) {
             this.defaultTimeout = defaultTimeout;
             return this;
         }
 
+        /**
+         * Sets custom credentials for authentication.
+         * 
+         * @param credentials the credentials object
+         * @return this builder instance
+         */
         public Builder credentials(VAXCredentials.Credentials credentials) {
             this.credentials = credentials;
             this.serviceAccount = null; // Clear other credential source
             return this;
         }
 
+        /**
+         * Sets service account credentials from an input stream.
+         * 
+         * @param serviceAccount input stream containing service account JSON
+         * @return this builder instance
+         */
         public Builder serviceAccount(InputStream serviceAccount) {
             this.serviceAccount = serviceAccount;
             this.credentials = null; // Clear other credential source
             return this;
         }
 
+        /**
+         * Builds the GRPCClient instance.
+         * 
+         * @param <T> the type of gRPC stub
+         * @return configured GRPCClient instance
+         * @throws SDKException if configuration is invalid
+         */
         public <T extends io.grpc.stub.AbstractStub<T>> GRPCClient<T> build() throws SDKException {
             if (host == null || host.trim().isEmpty()) {
                 throw new SDKException("Host cannot be null or empty");
@@ -93,6 +153,11 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         }
     }
 
+    /**
+     * Creates a new builder for configuring GRPCClient.
+     * 
+     * @return new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -112,6 +177,11 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         shutdown();
     }
 
+    /**
+     * Shuts down the gRPC channel.
+     * 
+     * @throws SDKException if shutdown fails or is interrupted
+     */
     public void shutdown() throws SDKException {
         if (this.channel != null && !this.channel.isShutdown()) {
             try {
@@ -124,9 +194,13 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
     }
 
     /**
+     * Creates a new blocking stub for the given channel.
+     * 
+     * <p>This method must be implemented by concrete subclasses to create
+     * the appropriate stub type for their specific service.
+     * 
      * @param channel the channel to use for the blocking stub
-     *                This should create a new blocking stub and set the instance property to be used later
-     *                It should also set the headers
+     * @return the configured blocking stub
      */
     protected abstract T newBlockingStub(ManagedChannel channel);
 
