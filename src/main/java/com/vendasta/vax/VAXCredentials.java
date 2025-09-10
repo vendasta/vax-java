@@ -1,5 +1,24 @@
 package com.vendasta.vax;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.security.KeyPair;
+import java.security.Security;
+import java.security.interfaces.ECPrivateKey;
+import java.time.Duration;
+import java.util.Date;
+import java.util.concurrent.Executor;
+
+import org.bouncycastle.openssl.PEMException;
+
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.nimbusds.jose.JOSEException;
@@ -8,28 +27,17 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import io.grpc.*;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.bouncycastle.openssl.PEMException;
 
-import java.io.*;
-import java.security.KeyPair;
-import java.security.Security;
-import java.security.interfaces.ECPrivateKey;
-import java.util.Date;
-import java.util.concurrent.Executor;
+import io.grpc.CallCredentials;
+import io.grpc.Metadata;
+import io.grpc.Status;
 
 
 public class VAXCredentials extends CallCredentials {
     private VAXCredentialsManager credentialsManager;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
-    VAXCredentials(String scope) throws SDKException {
+    VAXCredentials() throws SDKException {
         String serviceAccountPath = System.getenv("VENDASTA_APPLICATION_CREDENTIALS");
         if (serviceAccountPath == null) {
             throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
@@ -41,11 +49,15 @@ public class VAXCredentials extends CallCredentials {
         } catch (FileNotFoundException e) {
             throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable file not found");
         }
-        this.credentialsManager = new VAXCredentialsManager(scope, serviceAccount);
+        this.credentialsManager = new VAXCredentialsManager(serviceAccount);
     }
 
-    VAXCredentials(String scope, InputStream serviceAccount) throws SDKException {
-        this.credentialsManager = new VAXCredentialsManager(scope, serviceAccount);
+    VAXCredentials(InputStream serviceAccount) throws SDKException {
+        this.credentialsManager = new VAXCredentialsManager(serviceAccount);
+    }
+
+    VAXCredentials(Credentials credentials) throws SDKException {
+        this.credentialsManager = new VAXCredentialsManager(credentials);
     }
 
     @Override
@@ -61,28 +73,94 @@ public class VAXCredentials extends CallCredentials {
         });
     }
 
-    @Override
-    public void thisUsesUnstableApi() {}
 
     public String getAuthorizationToken() {
         return credentialsManager.getAuthorization();
     }
 
+    public static class Credentials {
+        @SerializedName("private_key_id")
+        private String privateKeyID;
+        @SerializedName("private_key")
+        private String privateKey;
+        @SerializedName("client_email")
+        private String email;
+        @SerializedName("token_uri")
+        private String tokenURI;
+
+        // Default constructor for JSON deserialization
+        public Credentials() {}
+
+        // Constructor with all fields
+        public Credentials(String privateKeyID, String privateKey, String email, String tokenURI) {
+            this.privateKeyID = privateKeyID;
+            this.privateKey = privateKey;
+            this.email = email;
+            this.tokenURI = tokenURI;
+        }
+
+        // Getters
+        public String getPrivateKeyID() {
+            return privateKeyID;
+        }
+
+        public String getPrivateKey() {
+            return privateKey;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getTokenURI() {
+            return tokenURI;
+        }
+
+        // Setters
+        public void setPrivateKeyID(String privateKeyID) {
+            this.privateKeyID = privateKeyID;
+        }
+
+        public void setPrivateKey(String privateKey) {
+            this.privateKey = privateKey;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public void setTokenURI(String tokenURI) {
+            this.tokenURI = tokenURI;
+        }
+    }
+
 
     private class VAXCredentialsManager {
         private Gson gson = new Gson();
-        private String scope;
         private Credentials creds;
         private ECPrivateKey privateKey;
         private String currentToken;
         private Date currentTokenExpiry;
+        private HttpClient httpClient;
 
-        VAXCredentialsManager(String scope, InputStream serviceAccount) throws SDKException {
-
-            this.scope = scope;
+        VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
             this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);
+            this.initializeCredentials();
+        }
+
+        VAXCredentialsManager(Credentials credentials) throws SDKException {
+            this.creds = credentials;
+            this.initializeCredentials();
+        }
+
+        private void initializeCredentials() throws SDKException {
             this.currentToken = null;
             this.currentTokenExpiry = null;
+            
+            // Initialize HTTP client with reasonable timeout
+            this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
 
             Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
             StringReader reader = new StringReader(creds.privateKey);
@@ -132,21 +210,38 @@ public class VAXCredentials extends CallCredentials {
                 throw new CredentialsException("Something went wrong with building the credentials", e);
             }
 
-            HttpClient httpClient = HttpClientBuilder.create().build();
-
             try {
-                HttpPost request = new HttpPost(creds.tokenURI);
-                StringEntity params = new StringEntity("{\"token\":\"" + jwtAccess + "\"}");
-                request.addHeader("content-type", "application/json");
-                request.setEntity(params);
-                HttpResponse response = httpClient.execute(request);
-                String responseAsString = EntityUtils.toString(response.getEntity());
-                GetTokenResponse tokenResponse = gson.fromJson(responseAsString, GetTokenResponse.class);
+                String requestBody = "{\"token\":\"" + jwtAccess + "\"}";
+                
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(creds.tokenURI))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+                
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                
+                if (response.statusCode() >= 400) {
+                    throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body());
+                }
+                
+                String responseBody = response.body();
+                GetTokenResponse tokenResponse = gson.fromJson(responseBody, GetTokenResponse.class);
+                if (tokenResponse == null || tokenResponse.token == null) {
+                    throw new CredentialsException("Invalid response: missing token");
+                }
+                
                 currentToken = "Bearer " + tokenResponse.token;
                 SignedJWT signedJWT = SignedJWT.parse(tokenResponse.token);
                 currentTokenExpiry = signedJWT.getJWTClaimsSet().getExpirationTime();
+            } catch (IOException e) {
+                throw new CredentialsException("Network error during token refresh: " + e.getMessage(), e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CredentialsException("Token refresh was interrupted: " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new CredentialsException("An error occurred while fetching the token", e);
+                throw new CredentialsException("An error occurred while fetching the token: " + e.getMessage(), e);
             }
         }
 
@@ -177,16 +272,6 @@ public class VAXCredentials extends CallCredentials {
             return signedJWT.serialize();
         }
 
-        class Credentials {
-            @SerializedName("private_key_id")
-            private String privateKeyID;
-            @SerializedName("private_key")
-            private String privateKey;
-            @SerializedName("client_email")
-            private String email;
-            @SerializedName("token_uri")
-            private String tokenURI;
-        }
 
         class GetTokenResponse {
             private String token;
