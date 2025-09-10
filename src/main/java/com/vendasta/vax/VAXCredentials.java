@@ -111,10 +111,19 @@ public class VAXCredentials extends CallCredentials {
         @SerializedName("token_uri")
         private String tokenURI;
 
-        // Default constructor for JSON deserialization
+        /**
+         * Default constructor for JSON deserialization.
+         */
         public Credentials() {}
 
-        // Constructor with all fields
+        /**
+         * Constructor with all credential fields.
+         * 
+         * @param privateKeyID the private key identifier
+         * @param privateKey the private key in PEM format
+         * @param email the service account email
+         * @param tokenURI the token endpoint URI
+         */
         public Credentials(String privateKeyID, String privateKey, String email, String tokenURI) {
             this.privateKeyID = privateKeyID;
             this.privateKey = privateKey;
@@ -122,36 +131,74 @@ public class VAXCredentials extends CallCredentials {
             this.tokenURI = tokenURI;
         }
 
-        // Getters
+        /**
+         * Returns the private key identifier.
+         * 
+         * @return the private key ID
+         */
         public String getPrivateKeyID() {
             return privateKeyID;
         }
 
+        /**
+         * Returns the private key in PEM format.
+         * 
+         * @return the private key
+         */
         public String getPrivateKey() {
             return privateKey;
         }
 
+        /**
+         * Returns the service account email.
+         * 
+         * @return the email address
+         */
         public String getEmail() {
             return email;
         }
 
+        /**
+         * Returns the token endpoint URI.
+         * 
+         * @return the token URI
+         */
         public String getTokenURI() {
             return tokenURI;
         }
 
-        // Setters
+        /**
+         * Sets the private key identifier.
+         * 
+         * @param privateKeyID the private key ID
+         */
         public void setPrivateKeyID(String privateKeyID) {
             this.privateKeyID = privateKeyID;
         }
 
+        /**
+         * Sets the private key in PEM format.
+         * 
+         * @param privateKey the private key
+         */
         public void setPrivateKey(String privateKey) {
             this.privateKey = privateKey;
         }
 
+        /**
+         * Sets the service account email.
+         * 
+         * @param email the email address
+         */
         public void setEmail(String email) {
             this.email = email;
         }
 
+        /**
+         * Sets the token endpoint URI.
+         * 
+         * @param tokenURI the token URI
+         */
         public void setTokenURI(String tokenURI) {
             this.tokenURI = tokenURI;
         }

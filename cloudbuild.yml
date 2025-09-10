@@ -80,8 +80,9 @@ steps:
     </settings>
     EOF
     
-    # Deploy to Maven Central
-    mvn clean deploy -Dgpg.passphrase=$(cat /pass/passphrase)
+    # Deploy to Maven Central  
+    export GPG_TTY=$(tty)
+    mvn clean deploy -Dgpg.passphrase=$(cat /pass/passphrase) -Dgpg.batch=true
   volumes:
   - name: key
     path: /key

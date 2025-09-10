@@ -30,10 +30,18 @@ public class RequestOptions {
 
     /**
      * Builder for configuring RequestOptions.
+     * 
+     * <p>Provides a fluent interface for setting request-specific options
+     * including timeout and authentication settings.
      */
     public static class Builder {
         private Boolean includeToken;
         private Float timeout;
+        
+        /**
+         * Creates a new builder instance.
+         */
+        public Builder() {}
 
         Builder setTimeout(float timeout) {
             this.timeout = timeout;

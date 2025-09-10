@@ -23,10 +23,21 @@ public class CredentialsException extends RuntimeException {
         super(message);
     }
 
+    /**
+     * Creates a new credentials exception with the specified message and cause.
+     * 
+     * @param message the error message
+     * @param t the underlying cause
+     */
     public CredentialsException(String message, Throwable t) {
         super(message, t);
     }
 
+    /**
+     * Creates a new credentials exception with the specified cause.
+     * 
+     * @param t the underlying cause
+     */
     public CredentialsException(Throwable t) {
         super(t);
     }
