@@ -73,11 +73,11 @@ steps:
     gpg --list-secret-keys --keyid-format LONG
     
     # Get the key ID and set ultimate trust
-    KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep 'sec' | head -1 | awk '{print $2}' | cut -d'/' -f2)
-    echo "Using GPG key ID: $KEY_ID"
+    KEY_ID=$$(gpg --list-secret-keys --keyid-format LONG | grep 'sec' | head -1 | awk '{print $$2}' | cut -d'/' -f2)
+    echo "Using GPG key ID: $$KEY_ID"
     
     # Set trust level for the key
-    echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $KEY_ID trust quit
+    echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $$KEY_ID trust quit
     
     # Set up Maven settings with credentials
     mkdir -p ~/.m2
@@ -87,18 +87,18 @@ steps:
         <server>
           <id>ossrh</id>
           <username>vendasta</username>
-          <password>$(cat /pass/password)</password>
+          <password>$$(cat /pass/password)</password>
         </server>
       </servers>
     </settings>
     EOF
-    
+    .
     # Deploy to Maven Central  
-    export GPG_TTY=$(tty)
+    export GPG_TTY=$$(tty)
     mvn clean deploy \
-      -Dgpg.passphrase=$(cat /pass/passphrase) \
+      -Dgpg.passphrase=$$(cat /pass/passphrase) \
       -Dgpg.batch=true \
-      -Dgpg.keyname=$KEY_ID \
+      -Dgpg.keyname=$$KEY_ID \
       -Dgpg.executable=gpg
   volumes:
   - name: key
