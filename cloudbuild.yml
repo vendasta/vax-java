@@ -26,22 +26,6 @@ steps:
   - name: key
     path: /key
 - name: gcr.io/cloud-builders/gcloud
-  id: 'password'
-  waitFor: ['ciphers']
-  args:
-  - kms
-  - decrypt
-  - --location=global
-  - --keyring=container-builder
-  - --key=oss_sonatype_org-password
-  - --plaintext-file=/pass/password
-  - --ciphertext-file=/ciphers/password.enc
-  volumes:
-  - name: ciphers
-    path: /ciphers
-  - name: pass
-    path: /pass
-- name: gcr.io/cloud-builders/gcloud
   id: 'passphrase'
   waitFor: ['ciphers']
   args:
@@ -57,8 +41,117 @@ steps:
     path: /ciphers
   - name: pass
     path: /pass
-- name: 'gcr.io/repcore-prod/mvn-deploy:5'
-  waitFor: ['key', 'password', 'passphrase']
+- name: gcr.io/cloud-builders/gcloud
+  id: 'username'
+  waitFor: ['ciphers']
+  args:
+  - kms
+  - decrypt
+  - --location=global
+  - --keyring=container-builder
+  - --key=oss_sonatype_org-password
+  - --plaintext-file=/pass/username
+  - --ciphertext-file=/ciphers/username.enc
+  volumes:
+  - name: ciphers
+    path: /ciphers
+  - name: pass
+    path: /pass
+- name: gcr.io/cloud-builders/gcloud
+  id: 'token'
+  waitFor: ['ciphers']
+  args:
+  - kms
+  - decrypt
+  - --location=global
+  - --keyring=container-builder
+  - --key=oss_sonatype_org-password
+  - --plaintext-file=/pass/token
+  - --ciphertext-file=/ciphers/token.enc
+  volumes:
+  - name: ciphers
+    path: /ciphers
+  - name: pass
+    path: /pass
+- name: 'maven:3.9.6-eclipse-temurin-21'
+  waitFor: ['key', 'passphrase', 'username', 'token']
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    apt-get update && apt-get install -y gnupg dirmngr
+    
+    # Configure GPG for CI environment
+    export GPG_TTY=$$(tty)
+    mkdir -p ~/.gnupg
+    chmod 700 ~/.gnupg
+    
+    # Simple GPG configuration for CI
+    cat > ~/.gnupg/gpg.conf << 'EOF'
+    use-agent
+    pinentry-mode loopback
+    batch
+    no-tty
+    EOF
+    
+    cat > ~/.gnupg/gpg-agent.conf << 'EOF'
+    allow-loopback-pinentry
+    default-cache-ttl 86400
+    max-cache-ttl 86400
+    EOF
+    
+    # Import GPG key
+    gpg --batch --import /key/key.asc
+    
+    # Get key ID and trust the key
+    KEY_ID=$$(gpg --list-secret-keys --keyid-format LONG | grep 'sec' | head -1 | awk '{print $$2}' | cut -d'/' -f2)
+    echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $$KEY_ID trust quit
+    
+    # Export public key to keyservers (might be required by Central Portal)
+    gpg --keyserver hkps://keys.openpgp.org --send-keys $$KEY_ID || true
+    gpg --keyserver hkps://keyserver.ubuntu.com --send-keys $$KEY_ID || true
+    
+    # Restart GPG agent
+    pkill gpg-agent || true
+    gpg-agent --daemon --allow-loopback-pinentry &
+    sleep 2
+    
+    mkdir -p ~/.m2
+    cat > ~/.m2/settings.xml << 'EOL'
+    <settings>
+      <servers>
+        <server>
+          <id>central</id>
+          <username>PLACEHOLDER_USERNAME</username>
+          <password>PLACEHOLDER_TOKEN</password>
+        </server>
+      </servers>
+      <profiles>
+        <profile>
+          <activation>
+            <activeByDefault>true</activeByDefault>
+          </activation>
+          <properties>
+            <gpg.passphrase>PLACEHOLDER_PASSPHRASE</gpg.passphrase>
+          </properties>
+        </profile>
+      </profiles>
+    </settings>
+    EOL
+    sed -i "s/PLACEHOLDER_USERNAME/$$(cat /pass/username)/g" ~/.m2/settings.xml
+    sed -i "s/PLACEHOLDER_TOKEN/$$(cat /pass/token)/g" ~/.m2/settings.xml
+    sed -i "s/PLACEHOLDER_PASSPHRASE/$$(cat /pass/passphrase)/g" ~/.m2/settings.xml
+    
+    # Set environment variables
+    export GPG_TTY=$$(tty)
+    export GNUPGHOME=$$HOME/.gnupg
+    
+    # Deploy with GPG signing
+    mvn clean deploy -e \
+      -Dgpg.keyname=$$KEY_ID \
+      -Dgpg.passphrase="$$(cat /pass/passphrase)" \
+      -Dgpg.useAgent=true \
+      -s ~/.m2/settings.xml
   volumes:
   - name: key
     path: /key
