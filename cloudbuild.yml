@@ -83,6 +83,14 @@ steps:
     gpg --list-secret-keys --keyid-format LONG
     gpg --list-keys --with-colons $$KEY_ID
     
+    # Show detailed key information
+    echo "=== GPG Key Details ==="
+    gpg --list-secret-keys --with-fingerprint $$KEY_ID
+    echo "=== Trust Database ==="
+    gpg --check-trustdb --verbose
+    echo "=== Testing key usability ==="
+    echo "test" | gpg --batch --quiet --armor --detach-sign --default-key $$KEY_ID --pinentry-mode loopback --passphrase $$(cat /pass/passphrase) || echo "Key test failed"
+    
     # Set up Maven settings with credentials
     mkdir -p ~/.m2
     cat > ~/.m2/settings.xml <<EOF
@@ -99,7 +107,7 @@ steps:
     .
     # Deploy to Maven Central  
     export GPG_TTY=$$(tty)
-    mvn clean deploy \
+    mvn clean deploy -X \
       -Dgpg.passphrase=$$(cat /pass/passphrase) \
       -Dgpg.batch=true \
       -Dgpg.keyname=$$KEY_ID \
