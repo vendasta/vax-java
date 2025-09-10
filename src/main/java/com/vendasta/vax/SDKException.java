@@ -1,5 +1,12 @@
 package com.vendasta.vax;
 
+/**
+ * Exception thrown by VAX SDK operations.
+ * 
+ * <p>This exception wraps various types of errors that can occur during
+ * SDK operations including network errors, authentication failures,
+ * and service errors.
+ */
 public class SDKException extends RuntimeException {
     /**
      * Because we inherit from Serializable, this is a requirement. It is used
@@ -10,6 +17,11 @@ public class SDKException extends RuntimeException {
     private io.grpc.Status status;
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Creates a new SDK exception with the specified message.
+     * 
+     * @param message the error message
+     */
     public SDKException(String message) {
         super(message);
         status = io.grpc.Status.UNAVAILABLE;
@@ -20,6 +32,12 @@ public class SDKException extends RuntimeException {
         status = e.getStatus();
     }
 
+    /**
+     * Creates a new SDK exception with the specified message and cause.
+     * 
+     * @param message the error message
+     * @param t the underlying cause
+     */
     public SDKException(String message, Throwable t) {
         super(message, t);
         status = io.grpc.Status.UNAVAILABLE;

@@ -1,5 +1,11 @@
 package com.vendasta.vax;
 
+/**
+ * Configuration for VAX environment settings.
+ * 
+ * <p>This class encapsulates the connection details for a specific
+ * VAX environment including host, URL, and security settings.
+ */
 public class EnvironmentConfig {
     private final String url;
     private final String host;
@@ -12,18 +18,36 @@ public class EnvironmentConfig {
         this.secure = builder.secure;
     }
 
+    /**
+     * Returns whether this environment uses secure connections.
+     * 
+     * @return true if HTTPS/secure gRPC should be used
+     */
     public boolean isSecure() {
         return secure;
     }
 
+    /**
+     * Returns the base URL for this environment.
+     * 
+     * @return the base URL
+     */
     public String getUrl() {
         return url;
     }
 
+    /**
+     * Returns the hostname for this environment.
+     * 
+     * @return the hostname
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * Builder for configuring EnvironmentConfig instances.
+     */
     public static class Builder {
         private String host;
         private String url;
@@ -55,6 +79,11 @@ public class EnvironmentConfig {
         }
     }
 
+    /**
+     * Creates a new builder for EnvironmentConfig.
+     * 
+     * @return new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
