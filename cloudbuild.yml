@@ -57,8 +57,31 @@ steps:
     path: /ciphers
   - name: pass
     path: /pass
-- name: 'gcr.io/repcore-prod/mvn-deploy:5'
+- name: 'maven:3.9-openjdk-21'
   waitFor: ['key', 'password', 'passphrase']
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    # Import GPG key
+    gpg --import /key/key.asc
+    
+    # Set up Maven settings with credentials
+    mkdir -p ~/.m2
+    cat > ~/.m2/settings.xml <<EOF
+    <settings>
+      <servers>
+        <server>
+          <id>ossrh</id>
+          <username>vendasta</username>
+          <password>$(cat /pass/password)</password>
+        </server>
+      </servers>
+    </settings>
+    EOF
+    
+    # Deploy to Maven Central
+    mvn clean deploy -Dgpg.passphrase=$(cat /pass/passphrase)
   volumes:
   - name: key
     path: /key
