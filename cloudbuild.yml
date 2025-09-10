@@ -57,7 +57,7 @@ steps:
     path: /ciphers
   - name: pass
     path: /pass
-- name: 'maven:3.9-openjdk-21'
+- name: 'maven:3.9.6-eclipse-temurin-21'
   waitFor: ['key', 'password', 'passphrase']
   entrypoint: 'bash'
   args:
