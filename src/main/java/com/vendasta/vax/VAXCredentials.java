@@ -32,7 +32,19 @@ import io.grpc.CallCredentials;
 import io.grpc.Metadata;
 import io.grpc.Status;
 
-
+/**
+ * VAX credentials implementation for authentication with VAX services.
+ * 
+ * <p>This class handles authentication token management, including automatic
+ * token refresh and JWT signing for service-to-service communication.
+ * 
+ * <p>Credentials can be loaded from:
+ * <ul>
+ *   <li>Environment variable (VENDASTA_APPLICATION_CREDENTIALS)</li>
+ *   <li>Input stream containing service account JSON</li>
+ *   <li>Credentials object with explicit values</li>
+ * </ul>
+ */
 public class VAXCredentials extends CallCredentials {
     private VAXCredentialsManager credentialsManager;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
@@ -74,10 +86,21 @@ public class VAXCredentials extends CallCredentials {
     }
 
 
+    /**
+     * Gets the current authorization token for HTTP requests.
+     * 
+     * @return the authorization token (including "Bearer " prefix)
+     */
     public String getAuthorizationToken() {
         return credentialsManager.getAuthorization();
     }
 
+    /**
+     * Container for service account credentials.
+     * 
+     * <p>This class holds the necessary information for authenticating
+     * with VAX services using service account credentials.
+     */
     public static class Credentials {
         @SerializedName("private_key_id")
         private String privateKeyID;

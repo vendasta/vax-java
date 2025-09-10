@@ -1,5 +1,11 @@
 package com.vendasta.vax;
 
+/**
+ * Configuration options for individual API requests.
+ * 
+ * <p>This class allows customization of request behavior including
+ * timeouts and authentication settings.
+ */
 public class RequestOptions {
     private Boolean includeToken = true;
     private Float timeout = 10000f;
@@ -22,6 +28,9 @@ public class RequestOptions {
     }
 
 
+    /**
+     * Builder for configuring RequestOptions.
+     */
     public static class Builder {
         private Boolean includeToken;
         private Float timeout;
