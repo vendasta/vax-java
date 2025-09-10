@@ -104,7 +104,12 @@ steps:
       </servers>
     </settings>
     EOF
-    .
+    
+    # Verify settings.xml was created correctly
+    echo "=== Maven settings.xml ==="
+    cat ~/.m2/settings.xml
+    echo "=========================="
+    
     # Deploy to Maven Central  
     export GPG_TTY=$$(tty)
     mvn clean deploy -X \
