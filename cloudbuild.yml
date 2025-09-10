@@ -76,8 +76,12 @@ steps:
     KEY_ID=$$(gpg --list-secret-keys --keyid-format LONG | grep 'sec' | head -1 | awk '{print $$2}' | cut -d'/' -f2)
     echo "Using GPG key ID: $$KEY_ID"
     
-    # Set trust level for the key
+    # Set trust level for the key (ultimate trust)
     echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $$KEY_ID trust quit
+    
+    # Verify key is usable and show trust info
+    gpg --list-secret-keys --keyid-format LONG
+    gpg --list-keys --with-colons $$KEY_ID
     
     # Set up Maven settings with credentials
     mkdir -p ~/.m2
