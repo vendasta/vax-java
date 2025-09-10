@@ -92,28 +92,56 @@ steps:
     echo "test" | gpg --batch --quiet --armor --detach-sign --default-key $$KEY_ID --pinentry-mode loopback --passphrase $$(cat /pass/passphrase) || echo "Key test failed"
     
     # Set up Maven settings with credentials
+    echo "Creating Maven settings..."
     mkdir -p ~/.m2
-    cat > ~/.m2/settings.xml <<EOF
+    
+    # Read password first
+    SONATYPE_PASSWORD=$$(cat /pass/password)
+    echo "Password read successfully: $${#SONATYPE_PASSWORD} characters"
+    
+    # Read passphrase first too
+    SONATYPE_PASSPHRASE=$$(cat /pass/passphrase)
+    echo "Passphrase read successfully: $${#SONATYPE_PASSPHRASE} characters"
+    
+    # Create settings.xml with explicit content matching original format
+    cat > ~/.m2/settings.xml << 'EOL'
     <settings>
       <servers>
         <server>
           <id>ossrh</id>
-          <username>vendasta</username>
-          <password>$$(cat /pass/password)</password>
+          <username>sgryschuk</username>
+          <password>PLACEHOLDER_PASSWORD</password>
         </server>
       </servers>
+      <profiles>
+        <profile>
+          <activation>
+            <activeByDefault>true</activeByDefault>
+          </activation>
+          <properties>
+            <gpg.passphrase>PLACEHOLDER_PASSPHRASE</gpg.passphrase>
+          </properties>
+        </profile>
+      </profiles>
     </settings>
-    EOF
+    EOL
+    
+    # Replace placeholders with actual values
+    sed -i "s/PLACEHOLDER_PASSWORD/$$SONATYPE_PASSWORD/g" ~/.m2/settings.xml
+    sed -i "s/PLACEHOLDER_PASSPHRASE/$$SONATYPE_PASSPHRASE/g" ~/.m2/settings.xml
     
     # Verify settings.xml was created correctly
     echo "=== Maven settings.xml ==="
     cat ~/.m2/settings.xml
     echo "=========================="
     
+    # Also verify the file exists and has content
+    echo "File size: $$(wc -c ~/.m2/settings.xml)"
+    echo "File permissions: $$(ls -la ~/.m2/settings.xml)"
+    
     # Deploy to Maven Central  
     export GPG_TTY=$$(tty)
     mvn clean deploy -X \
-      -Dgpg.passphrase=$$(cat /pass/passphrase) \
       -Dgpg.batch=true \
       -Dgpg.keyname=$$KEY_ID \
       -Dgpg.executable=gpg
