@@ -122,8 +122,8 @@ steps:
       <servers>
         <server>
           <id>central</id>
-          <username>PLACEHOLDER_USERNAME</username>
-          <password>PLACEHOLDER_TOKEN</password>
+          <username>TEMP_USERNAME</username>
+          <password>TEMP_TOKEN</password>
         </server>
       </servers>
       <profiles>
@@ -132,15 +132,15 @@ steps:
             <activeByDefault>true</activeByDefault>
           </activation>
           <properties>
-            <gpg.passphrase>PLACEHOLDER_PASSPHRASE</gpg.passphrase>
+            <gpg.passphrase>TEMP_PASSPHRASE</gpg.passphrase>
           </properties>
         </profile>
       </profiles>
     </settings>
     EOL
-    sed -i "s/PLACEHOLDER_USERNAME/$$(cat /pass/username)/g" ~/.m2/settings.xml
-    sed -i "s/PLACEHOLDER_TOKEN/$$(cat /pass/token)/g" ~/.m2/settings.xml
-    sed -i "s/PLACEHOLDER_PASSPHRASE/$$(cat /pass/passphrase)/g" ~/.m2/settings.xml
+    sed -i "s/TEMP_USERNAME/$$(cat /pass/username)/g" ~/.m2/settings.xml
+    sed -i "s/TEMP_TOKEN/$$(cat /pass/token)/g" ~/.m2/settings.xml
+    sed -i "s/TEMP_PASSPHRASE/$$(cat /pass/passphrase)/g" ~/.m2/settings.xml
     
     # Set environment variables
     export GPG_TTY=$$(tty)
