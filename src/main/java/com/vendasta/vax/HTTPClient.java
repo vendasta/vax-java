@@ -16,7 +16,22 @@ import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 
-
+/**
+ * Abstract HTTP client for making HTTP requests to VAX services.
+ * 
+ * <p>This client provides a fluent builder pattern for configuration and supports
+ * various authentication methods including environment variables, credential objects,
+ * and service account streams.
+ * 
+ * <p>Example usage:
+ * <pre>{@code
+ * HTTPClient client = HTTPClient.builder()
+ *     .host("api.example.com")
+ *     .secure(true)
+ *     .defaultTimeout(10000)
+ *     .build();
+ * }</pre>
+ */
 public abstract class HTTPClient extends VAXClient implements AutoCloseable {
     private static final Gson GSON = new Gson();
     
@@ -45,40 +60,87 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
             .build();
     }
 
+    /**
+     * Builder for configuring HTTPClient instances.
+     * 
+     * <p>Provides a fluent interface for setting HTTP client configuration
+     * including host, security, timeout, and authentication settings.
+     */
     public static class Builder {
         private String host;
         private boolean secure = true; // Default to secure
         private float defaultTimeout = 10000; // Default timeout
         private VAXCredentials.Credentials credentials;
         private InputStream serviceAccount;
+        
+        /**
+         * Creates a new builder instance.
+         */
+        public Builder() {}
 
+        /**
+         * Sets the hostname for the HTTP client.
+         * 
+         * @param host the hostname (required)
+         * @return this builder instance
+         */
         public Builder host(String host) {
             this.host = host;
             return this;
         }
 
+        /**
+         * Sets whether to use HTTPS.
+         * 
+         * @param secure true for HTTPS, false for HTTP (default: true)
+         * @return this builder instance
+         */
         public Builder secure(boolean secure) {
             this.secure = secure;
             return this;
         }
 
+        /**
+         * Sets the default timeout for HTTP requests.
+         * 
+         * @param defaultTimeout timeout in milliseconds (default: 10000)
+         * @return this builder instance
+         */
         public Builder defaultTimeout(float defaultTimeout) {
             this.defaultTimeout = defaultTimeout;
             return this;
         }
 
+        /**
+         * Sets custom credentials for authentication.
+         * 
+         * @param credentials the credentials object
+         * @return this builder instance
+         */
         public Builder credentials(VAXCredentials.Credentials credentials) {
             this.credentials = credentials;
             this.serviceAccount = null; // Clear other credential source
             return this;
         }
 
+        /**
+         * Sets service account credentials from an input stream.
+         * 
+         * @param serviceAccount input stream containing service account JSON
+         * @return this builder instance
+         */
         public Builder serviceAccount(InputStream serviceAccount) {
             this.serviceAccount = serviceAccount;
             this.credentials = null; // Clear other credential source
             return this;
         }
 
+        /**
+         * Builds the HTTPClient instance.
+         * 
+         * @return configured HTTPClient instance
+         * @throws SDKException if configuration is invalid
+         */
         public HTTPClient build() throws SDKException {
             if (host == null || host.trim().isEmpty()) {
                 throw new SDKException("Host cannot be null or empty");
@@ -87,6 +149,11 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
         }
     }
 
+    /**
+     * Creates a new builder for configuring HTTPClient.
+     * 
+     * @return new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -134,6 +201,17 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
         }
     }
 
+    /**
+     * Executes an HTTP request to the specified path.
+     * 
+     * @param <V> the response type
+     * @param path the API path
+     * @param req the request protobuf message
+     * @param responseType the response builder
+     * @param builder the request options builder
+     * @return the parsed response
+     * @throws SDKException if the request fails
+     */
     protected <V extends AbstractMessage.Builder<V>> V doRequest(String path, com.google.protobuf.AbstractMessage req, V responseType, RequestOptions.Builder builder) throws SDKException {
         Objects.requireNonNull(path, "Path cannot be null");
         Objects.requireNonNull(req, "Request cannot be null");

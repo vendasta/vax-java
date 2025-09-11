@@ -27,9 +27,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <scm>
-        <connection>scm:git:git://github.com/vendasta/.git</connection>
-        <developerConnection>scm:git:ssh://github.com/vendasta/.git</developerConnection>
-        <url>http://github.com/vendasta/tree/master</url>
+        <connection>scm:git:git://github.com/vendasta/vax-java.git</connection>
+        <developerConnection>scm:git:ssh://github.com/vendasta/vax-java.git</developerConnection>
+        <url>https://github.com/vendasta/vax-java</url>
     </scm>
     <dependencies>
         <dependency>
@@ -97,20 +97,20 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.7</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.4.0</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                    <autoPublish>false</autoPublish>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.5</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -120,9 +120,14 @@
                         </goals>
                         <configuration>
                             <gpgArguments>
+                                <arg>--batch</arg>
+                                <arg>--no-tty</arg>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
+                                <arg>--digest-algo</arg>
+                                <arg>SHA256</arg>
                             </gpgArguments>
+                            <useAgent>true</useAgent>
                         </configuration>
                     </execution>
                 </executions>
@@ -148,9 +153,9 @@
         </plugins>
     </build>
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/api/v1/publisher</url>
+        </repository>
     </distributionManagement>
 </project>

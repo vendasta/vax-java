@@ -32,7 +32,19 @@ import io.grpc.CallCredentials;
 import io.grpc.Metadata;
 import io.grpc.Status;
 
-
+/**
+ * VAX credentials implementation for authentication with VAX services.
+ * 
+ * <p>This class handles authentication token management, including automatic
+ * token refresh and JWT signing for service-to-service communication.
+ * 
+ * <p>Credentials can be loaded from:
+ * <ul>
+ *   <li>Environment variable (VENDASTA_APPLICATION_CREDENTIALS)</li>
+ *   <li>Input stream containing service account JSON</li>
+ *   <li>Credentials object with explicit values</li>
+ * </ul>
+ */
 public class VAXCredentials extends CallCredentials {
     private VAXCredentialsManager credentialsManager;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
@@ -74,10 +86,21 @@ public class VAXCredentials extends CallCredentials {
     }
 
 
+    /**
+     * Gets the current authorization token for HTTP requests.
+     * 
+     * @return the authorization token (including "Bearer " prefix)
+     */
     public String getAuthorizationToken() {
         return credentialsManager.getAuthorization();
     }
 
+    /**
+     * Container for service account credentials.
+     * 
+     * <p>This class holds the necessary information for authenticating
+     * with VAX services using service account credentials.
+     */
     public static class Credentials {
         @SerializedName("private_key_id")
         private String privateKeyID;
@@ -88,10 +111,19 @@ public class VAXCredentials extends CallCredentials {
         @SerializedName("token_uri")
         private String tokenURI;
 
-        // Default constructor for JSON deserialization
+        /**
+         * Default constructor for JSON deserialization.
+         */
         public Credentials() {}
 
-        // Constructor with all fields
+        /**
+         * Constructor with all credential fields.
+         * 
+         * @param privateKeyID the private key identifier
+         * @param privateKey the private key in PEM format
+         * @param email the service account email
+         * @param tokenURI the token endpoint URI
+         */
         public Credentials(String privateKeyID, String privateKey, String email, String tokenURI) {
             this.privateKeyID = privateKeyID;
             this.privateKey = privateKey;
@@ -99,36 +131,74 @@ public class VAXCredentials extends CallCredentials {
             this.tokenURI = tokenURI;
         }
 
-        // Getters
+        /**
+         * Returns the private key identifier.
+         * 
+         * @return the private key ID
+         */
         public String getPrivateKeyID() {
             return privateKeyID;
         }
 
+        /**
+         * Returns the private key in PEM format.
+         * 
+         * @return the private key
+         */
         public String getPrivateKey() {
             return privateKey;
         }
 
+        /**
+         * Returns the service account email.
+         * 
+         * @return the email address
+         */
         public String getEmail() {
             return email;
         }
 
+        /**
+         * Returns the token endpoint URI.
+         * 
+         * @return the token URI
+         */
         public String getTokenURI() {
             return tokenURI;
         }
 
-        // Setters
+        /**
+         * Sets the private key identifier.
+         * 
+         * @param privateKeyID the private key ID
+         */
         public void setPrivateKeyID(String privateKeyID) {
             this.privateKeyID = privateKeyID;
         }
 
+        /**
+         * Sets the private key in PEM format.
+         * 
+         * @param privateKey the private key
+         */
         public void setPrivateKey(String privateKey) {
             this.privateKey = privateKey;
         }
 
+        /**
+         * Sets the service account email.
+         * 
+         * @param email the email address
+         */
         public void setEmail(String email) {
             this.email = email;
         }
 
+        /**
+         * Sets the token endpoint URI.
+         * 
+         * @param tokenURI the token URI
+         */
         public void setTokenURI(String tokenURI) {
             this.tokenURI = tokenURI;
         }
