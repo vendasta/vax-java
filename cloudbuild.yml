@@ -1,5 +1,5 @@
 steps:
-- name: 'gcr.io/repcore-prod/mvn-deploy:6.0.0-rc2'
+- name: 'gcr.io/repcore-prod/mvn-deploy:6.0.0-rc3'
   secretEnv:
   - GPG_PRIVATE_KEY
   - GPG_PASSPHRASE
