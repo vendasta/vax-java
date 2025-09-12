@@ -33,8 +33,8 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
      */
     protected T blockingStub;
 
-    // Private constructor used by Builder
-    private GRPCClient(Builder builder) throws SDKException {
+    // Protected constructor used by Builder and subclasses
+    protected GRPCClient(Builder builder) throws SDKException {
         super(builder.defaultTimeout);
         this.host = Objects.requireNonNull(builder.host, "Host cannot be null");
         if (builder.host.trim().isEmpty()) {
@@ -56,6 +56,7 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
             throw new SDKException("Failed to initialize gRPC client: " + e.getMessage(), e);
         }
     }
+
 
     /**
      * Builder for configuring GRPCClient instances.
