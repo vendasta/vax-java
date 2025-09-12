@@ -40,8 +40,8 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
     private final VAXCredentials credentialsManager;
     private final HttpClient httpClient;
 
-    // Private constructor used by Builder
-    private HTTPClient(Builder builder) throws SDKException {
+    // Protected constructor used by Builder and subclasses  
+    protected HTTPClient(Builder builder) throws SDKException {
         super(builder.defaultTimeout);
         this.host = Objects.requireNonNull(builder.host, "Host cannot be null");
         this.secure = builder.secure;
@@ -59,6 +59,7 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
             .connectTimeout(Duration.ofMillis((long)(builder.defaultTimeout * 1000)))
             .build();
     }
+
 
     /**
      * Builder for configuring HTTPClient instances.
