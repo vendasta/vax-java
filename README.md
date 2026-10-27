@@ -1,7 +1,7 @@
 # VAX Java SDK
 
 [![Java Version](https://img.shields.io/badge/Java-21+-blue.svg)](https://openjdk.java.net/projects/jdk/21/)
-[![Maven Central](https://img.shields.io/badge/Maven%20Central-1.0.0-green.svg)](https://mvnrepository.com/artifact/com.vendasta/vax.v1)
+[![Maven Central](https://img.shields.io/badge/Maven%20Central-1.1.0-green.svg)](https://mvnrepository.com/artifact/com.vendasta/vax.v1)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 The **VAX (Vendasta API Extensions) Java SDK** provides a modern, type-safe client library for interacting with Vendasta's APIs using both HTTP and gRPC protocols. Built with Java 21, it offers a clean builder pattern API, comprehensive credential management, and excellent performance.
@@ -29,14 +29,14 @@ The **VAX (Vendasta API Extensions) Java SDK** provides a modern, type-safe clie
 <dependency>
     <groupId>com.vendasta</groupId>
     <artifactId>vax.v1</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```gradle
-implementation 'com.vendasta:vax.v1:1.0.0'
+implementation 'com.vendasta:vax.v1:1.1.0'
 ```
 
 ## 🏁 Quick Start
@@ -200,7 +200,10 @@ try {
     MyResponse response = client.doRequest(path, request, responseBuilder, options);
     
 } catch (SDKException e) {
-    // Handle SDK-specific errors
+    // getStatus() is the gRPC status the service returned, or UNAVAILABLE when the request never got an answer
+    if (e.getStatus().getCode() == io.grpc.Status.Code.PERMISSION_DENIED) {
+        // ...
+    }
     logger.error("SDK Error: {}", e.getMessage(), e);
 } catch (Exception e) {
     // Handle other errors

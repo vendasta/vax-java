@@ -40,13 +40,14 @@ public class SDKException extends RuntimeException {
 
     /**
      * Creates a new SDK exception with the specified message and cause.
+     * The status is the first gRPC status in the cause chain, or UNAVAILABLE when there is none.
      * 
      * @param message the error message
      * @param t the underlying cause
      */
     public SDKException(String message, Throwable t) {
         super(message, t);
-        status = io.grpc.Status.UNAVAILABLE;
+        status = statusOf(t);
     }
 
     /**
@@ -56,7 +57,7 @@ public class SDKException extends RuntimeException {
      */
     public SDKException(Throwable t) {
         super(t);
-        status = io.grpc.Status.UNAVAILABLE;
+        status = statusOf(t);
     }
 
     /**
@@ -88,5 +89,20 @@ public class SDKException extends RuntimeException {
      */
     public io.grpc.Status getStatus(){
         return status;
+    }
+
+    private static io.grpc.Status statusOf(Throwable t) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (cause instanceof io.grpc.StatusRuntimeException statusCause) {
+                return statusCause.getStatus();
+            }
+            if (cause instanceof io.grpc.StatusException statusCause) {
+                return statusCause.getStatus();
+            }
+            if (cause instanceof SDKException sdkCause) {
+                return sdkCause.getStatus();
+            }
+        }
+        return io.grpc.Status.UNAVAILABLE;
     }
 }
