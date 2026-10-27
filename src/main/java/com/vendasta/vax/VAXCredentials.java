@@ -16,6 +16,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 import org.bouncycastle.openssl.PEMException;
 
@@ -40,17 +41,33 @@ import io.grpc.Status;
  * 
  * <p>Credentials can be loaded from:
  * <ul>
+ *   <li>Environment variable (VENDASTA_ACCESS_TOKEN), a bearer token sent as is, for calling as yourself during local testing</li>
  *   <li>Environment variable (VENDASTA_APPLICATION_CREDENTIALS)</li>
  *   <li>Input stream containing service account JSON</li>
  *   <li>Credentials object with explicit values</li>
  * </ul>
  */
 public class VAXCredentials extends CallCredentials {
+    static final String ACCESS_TOKEN_ENV = "VENDASTA_ACCESS_TOKEN";
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private VAXCredentialsManager credentialsManager;
+    private String staticAuthorization;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
     VAXCredentials() throws SDKException {
-        String serviceAccountPath = System.getenv("VENDASTA_APPLICATION_CREDENTIALS");
+        this(System::getenv);
+    }
+
+    VAXCredentials(Function<String, String> getenv) throws SDKException {
+        String accessToken = getenv.apply(ACCESS_TOKEN_ENV);
+        if (accessToken != null && !accessToken.isBlank()) {
+            String token = accessToken.strip();
+            this.staticAuthorization = token.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length()) ? token : BEARER_PREFIX + token;
+            return;
+        }
+
+        String serviceAccountPath = getenv.apply("VENDASTA_APPLICATION_CREDENTIALS");
         if (serviceAccountPath == null) {
             throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
         }
@@ -77,7 +94,7 @@ public class VAXCredentials extends CallCredentials {
         executor.execute(() -> {
             try {
                 Metadata headers = new Metadata();
-                headers.put(AUTHORIZATION, credentialsManager.getAuthorization());
+                headers.put(AUTHORIZATION, getAuthorizationToken());
                 metadataApplier.apply(headers);
             } catch (Throwable e) {
                 metadataApplier.fail(Status.UNAUTHENTICATED.withCause(e));
@@ -92,6 +109,9 @@ public class VAXCredentials extends CallCredentials {
      * @return the authorization token (including "Bearer " prefix)
      */
     public String getAuthorizationToken() {
+        if (staticAuthorization != null) {
+            return staticAuthorization;
+        }
         return credentialsManager.getAuthorization();
     }
 

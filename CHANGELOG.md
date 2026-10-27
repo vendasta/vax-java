@@ -1,5 +1,6 @@
 # 1.1.0
 
+- `VENDASTA_ACCESS_TOKEN`: a client built without credentials sends this bearer token instead of a service account's, so you can call a service as yourself when testing locally. It takes precedence over `VENDASTA_APPLICATION_CREDENTIALS`.
 - `SDKException.getStatus()` now returns the gRPC status the service returned. It was `UNAVAILABLE` for every gRPC error, so a `PERMISSION_DENIED` or `NOT_FOUND` looked like an outage.
 
 # 1.0.0

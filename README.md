@@ -155,6 +155,13 @@ HTTPClient client = HTTPClient.builder()
     .build();
 ```
 
+#### 4. Your Own Access Token (Local Testing)
+To call a service as yourself, for example to test an SDK against demo from your laptop, set `VENDASTA_ACCESS_TOKEN` to your Vendasta bearer token and build the client without credentials. It is sent as `Authorization: Bearer <token>` (a value copied with its `Bearer ` prefix works too) and takes precedence over `VENDASTA_APPLICATION_CREDENTIALS`. Explicit `credentials(...)` or `serviceAccount(...)` still take precedence over both. The token is not refreshed, so get a new one when calls start failing with `UNAUTHENTICATED`.
+
+```bash
+export VENDASTA_ACCESS_TOKEN=<your token>
+```
+
 ### Request Options
 
 Configure individual requests:
