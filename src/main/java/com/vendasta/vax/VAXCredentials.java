@@ -67,7 +67,10 @@ public class VAXCredentials extends CallCredentials {
         String accessToken = getenv.apply(ACCESS_TOKEN_ENV);
         if (accessToken != null && !accessToken.isBlank()) {
             String token = accessToken.strip();
-            this.staticAuthorization = token.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length()) ? token : BEARER_PREFIX + token;
+            if (token.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
+                token = token.substring(BEARER_PREFIX.length()).strip();
+            }
+            this.staticAuthorization = BEARER_PREFIX + token;
             return;
         }
 

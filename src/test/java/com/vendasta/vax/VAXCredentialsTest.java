@@ -27,7 +27,7 @@ class VAXCredentialsTest {
     void acceptsAnAccessTokenCopiedWithItsBearerPrefix() throws Exception {
         VAXCredentials credentials = new VAXCredentials(Map.of(VAXCredentials.ACCESS_TOKEN_ENV, "  bearer abc.def.ghi\n")::get);
 
-        assertEquals("bearer abc.def.ghi", credentials.getAuthorizationToken());
+        assertEquals("Bearer abc.def.ghi", credentials.getAuthorizationToken());
     }
 
     @Test
