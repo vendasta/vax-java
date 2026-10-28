@@ -34,8 +34,8 @@ class SDKExceptionTest {
     }
 
     @Test
-    void keepsTheStatusOfAWrappedSDKException() {
-        Throwable caught = new SDKException("HTTP 404", 5);
+    void keepsTheGrpcCodeOfAWrappedSDKException() {
+        Throwable caught = new SDKException("error body with gRPC code 5", 5);
 
         assertEquals(Status.Code.NOT_FOUND, new SDKException("failed", caught).getStatus().getCode());
     }

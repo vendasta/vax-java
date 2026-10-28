@@ -170,7 +170,7 @@ Or your Vendasta bearer token, sent as `Authorization: Bearer <token>` (a value 
 export VENDASTA_ACCESS_TOKEN=<your token>
 ```
 
-`VENDASTA_ACCESS_TOKEN` takes precedence over `VENDASTA_APPLICATION_CREDENTIALS`, and explicit `credentials(...)` or `serviceAccount(...)` take precedence over both.
+`VENDASTA_ACCESS_TOKEN` takes precedence over `VENDASTA_APPLICATION_CREDENTIALS` (vax logs a warning when both are set), and explicit `credentials(...)` or `serviceAccount(...)` take precedence over both.
 
 ### Request Options
 
@@ -217,7 +217,8 @@ try {
     MyResponse response = client.doRequest(path, request, responseBuilder, options);
     
 } catch (SDKException e) {
-    // getStatus() is the gRPC status the service returned, or UNAVAILABLE when the request never got an answer
+    // getStatus() is the gRPC status carried by the failure, with UNAVAILABLE as the fallback when there is none.
+    // Credential failures are UNAUTHENTICATED over gRPC, and an unreachable host times out as DEADLINE_EXCEEDED.
     if (e.getStatus().getCode() == io.grpc.Status.Code.PERMISSION_DENIED) {
         // ...
     }
