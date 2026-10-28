@@ -16,10 +16,15 @@ import java.security.interfaces.ECPrivateKey;
 import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import org.bouncycastle.openssl.PEMException;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -40,19 +45,46 @@ import io.grpc.Status;
  * 
  * <p>Credentials can be loaded from:
  * <ul>
+ *   <li>Environment variable (VENDASTA_ACCESS_TOKEN), a bearer token sent as is, for calling as yourself during local testing</li>
  *   <li>Environment variable (VENDASTA_APPLICATION_CREDENTIALS)</li>
  *   <li>Input stream containing service account JSON</li>
  *   <li>Credentials object with explicit values</li>
  * </ul>
  */
 public class VAXCredentials extends CallCredentials {
+    static final String ACCESS_TOKEN_ENV = "VENDASTA_ACCESS_TOKEN";
+    static final String APPLICATION_CREDENTIALS_ENV = "VENDASTA_APPLICATION_CREDENTIALS";
+    static final String INVALID_CREDENTIALS_JSON = "Credentials must be a JSON object holding a service account or client key";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final System.Logger LOGGER = System.getLogger(VAXCredentials.class.getName());
+    static final AtomicBoolean warnedAccessTokenOverride = new AtomicBoolean();
+
     private VAXCredentialsManager credentialsManager;
+    private String staticAuthorization;
     private final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
 
     VAXCredentials() throws SDKException {
-        String serviceAccountPath = System.getenv("VENDASTA_APPLICATION_CREDENTIALS");
+        this(System::getenv);
+    }
+
+    VAXCredentials(Function<String, String> getenv) throws SDKException {
+        String accessToken = getenv.apply(ACCESS_TOKEN_ENV);
+        String serviceAccountPath = getenv.apply(APPLICATION_CREDENTIALS_ENV);
+        if (accessToken != null && !accessToken.isBlank()) {
+            String token = accessToken.strip();
+            if (token.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
+                token = token.substring(BEARER_PREFIX.length()).strip();
+            }
+            this.staticAuthorization = BEARER_PREFIX + token;
+            if (serviceAccountPath != null && warnedAccessTokenOverride.compareAndSet(false, true)) {
+                LOGGER.log(System.Logger.Level.WARNING, ACCESS_TOKEN_ENV + " is set, so calls use that token and "
+                    + APPLICATION_CREDENTIALS_ENV + " is ignored");
+            }
+            return;
+        }
+
         if (serviceAccountPath == null) {
-            throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
+            throw new SDKException("Neither " + ACCESS_TOKEN_ENV + " nor " + APPLICATION_CREDENTIALS_ENV + " env variable is set.");
         }
 
         InputStream serviceAccount;
@@ -77,14 +109,27 @@ public class VAXCredentials extends CallCredentials {
         executor.execute(() -> {
             try {
                 Metadata headers = new Metadata();
-                headers.put(AUTHORIZATION, credentialsManager.getAuthorization());
+                headers.put(AUTHORIZATION, getAuthorizationToken());
                 metadataApplier.apply(headers);
             } catch (Throwable e) {
-                metadataApplier.fail(Status.UNAUTHENTICATED.withCause(e));
+                metadataApplier.fail(credentialFailureStatus(e).withCause(e));
             }
         });
     }
 
+
+    static Status credentialFailureStatus(Throwable e) {
+        return hasCause(e, IOException.class) ? Status.UNAVAILABLE : Status.UNAUTHENTICATED;
+    }
+
+    private static boolean hasCause(Throwable t, Class<? extends Throwable> type) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (type.isInstance(cause)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Gets the current authorization token for HTTP requests.
@@ -92,6 +137,9 @@ public class VAXCredentials extends CallCredentials {
      * @return the authorization token (including "Bearer " prefix)
      */
     public String getAuthorizationToken() {
+        if (staticAuthorization != null) {
+            return staticAuthorization;
+        }
         return credentialsManager.getAuthorization();
     }
 
@@ -214,7 +262,19 @@ public class VAXCredentials extends CallCredentials {
         private HttpClient httpClient;
 
         VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
-            this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);
+            JsonElement json;
+            try {
+                json = JsonParser.parseReader(new InputStreamReader(serviceAccount));
+            } catch (JsonParseException e) {
+                throw new SDKException(INVALID_CREDENTIALS_JSON);
+            }
+            if (json.isJsonObject() && json.getAsJsonObject().has("client_key")) {
+                json = json.getAsJsonObject().get("client_key");
+            }
+            if (!json.isJsonObject()) {
+                throw new SDKException(INVALID_CREDENTIALS_JSON);
+            }
+            this.creds = gson.fromJson(json, Credentials.class);
             this.initializeCredentials();
         }
 
@@ -233,6 +293,9 @@ public class VAXCredentials extends CallCredentials {
                 .build();
 
             Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            if (creds == null || creds.privateKey == null) {
+                throw new SDKException("Credentials have no private_key: expected a service account or client key JSON");
+            }
             StringReader reader = new StringReader(creds.privateKey);
 
             Object parsed;
@@ -292,6 +355,10 @@ public class VAXCredentials extends CallCredentials {
                 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 
+                if (response.statusCode() >= 500 || response.statusCode() == 429) {
+                    throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body(),
+                        new IOException("Token endpoint returned HTTP " + response.statusCode()));
+                }
                 if (response.statusCode() >= 400) {
                     throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body());
                 }
