@@ -103,6 +103,36 @@ class ClientKeyFileTest {
         assertEquals("Credentials have no private_key: expected a service account or client key JSON", e.getMessage());
     }
 
+    @Test
+    void rejectsJsonThatIsNotAnObjectWithoutRepeatingIt() {
+        String doubleEncoded = new com.google.gson.JsonPrimitive(clientKey().toString()).toString();
+
+        SDKException e = assertThrows(SDKException.class,
+            () -> new VAXCredentials(new ByteArrayInputStream(doubleEncoded.getBytes(StandardCharsets.UTF_8))));
+
+        assertEquals(VAXCredentials.INVALID_CREDENTIALS_JSON, e.getMessage());
+    }
+
+    @Test
+    void rejectsAClientKeyThatIsNotAnObjectWithoutRepeatingIt() {
+        JsonObject file = new JsonObject();
+        file.addProperty("client_key", clientKey().toString());
+
+        SDKException e = assertThrows(SDKException.class, () -> new VAXCredentials(stream(file)));
+
+        assertEquals(VAXCredentials.INVALID_CREDENTIALS_JSON, e.getMessage());
+    }
+
+    @Test
+    void rejectsMalformedJsonWithoutRepeatingIt() {
+        String malformed = "{\"private_key\": \"" + privateKeyPem.replace("\n", "\\n");
+
+        SDKException e = assertThrows(SDKException.class,
+            () -> new VAXCredentials(new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8))));
+
+        assertEquals(VAXCredentials.INVALID_CREDENTIALS_JSON, e.getMessage());
+    }
+
     private JsonObject clientKey() {
         JsonObject clientKey = new JsonObject();
         clientKey.addProperty("client_email", EMAIL);

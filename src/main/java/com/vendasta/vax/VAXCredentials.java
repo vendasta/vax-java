@@ -21,7 +21,8 @@ import java.util.function.Function;
 import org.bouncycastle.openssl.PEMException;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import com.nimbusds.jose.JOSEException;
@@ -51,6 +52,7 @@ import io.grpc.Status;
  */
 public class VAXCredentials extends CallCredentials {
     static final String ACCESS_TOKEN_ENV = "VENDASTA_ACCESS_TOKEN";
+    static final String INVALID_CREDENTIALS_JSON = "Credentials must be a JSON object holding a service account or client key";
     private static final String BEARER_PREFIX = "Bearer ";
 
     private VAXCredentialsManager credentialsManager;
@@ -236,9 +238,17 @@ public class VAXCredentials extends CallCredentials {
         private HttpClient httpClient;
 
         VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
-            JsonObject json = JsonParser.parseReader(new InputStreamReader(serviceAccount)).getAsJsonObject();
-            if (json.has("client_key")) {
-                json = json.getAsJsonObject("client_key");
+            JsonElement json;
+            try {
+                json = JsonParser.parseReader(new InputStreamReader(serviceAccount));
+            } catch (JsonParseException e) {
+                throw new SDKException(INVALID_CREDENTIALS_JSON);
+            }
+            if (json.isJsonObject() && json.getAsJsonObject().has("client_key")) {
+                json = json.getAsJsonObject().get("client_key");
+            }
+            if (!json.isJsonObject()) {
+                throw new SDKException(INVALID_CREDENTIALS_JSON);
             }
             this.creds = gson.fromJson(json, Credentials.class);
             this.initializeCredentials();
