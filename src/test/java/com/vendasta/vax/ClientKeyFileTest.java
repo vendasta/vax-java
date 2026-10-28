@@ -147,6 +147,13 @@ class ClientKeyFileTest {
     }
 
     @Test
+    void aRateLimitedTokenRefreshIsUnavailableSoTheCallCanBeRetried() throws Exception {
+        tokenStatus = 429;
+
+        assertEquals(Status.Code.UNAVAILABLE, grpcFailure(new VAXCredentials(stream(clientKey()))).getCode());
+    }
+
+    @Test
     void aRejectedKeyIsUnauthenticated() throws Exception {
         tokenStatus = 401;
 

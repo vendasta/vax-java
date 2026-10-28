@@ -355,7 +355,7 @@ public class VAXCredentials extends CallCredentials {
                 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 
-                if (response.statusCode() >= 500) {
+                if (response.statusCode() >= 500 || response.statusCode() == 429) {
                     throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body(),
                         new IOException("Token endpoint returned HTTP " + response.statusCode()));
                 }

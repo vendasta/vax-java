@@ -2,7 +2,7 @@
 
 - `VENDASTA_ACCESS_TOKEN`: a client built without credentials sends this token as `Bearer <token>` instead of a service account's, so you can call a service as yourself when testing locally. It takes precedence over `VENDASTA_APPLICATION_CREDENTIALS`, and vax logs one warning through `System.Logger` when both are set.
 - `VENDASTA_APPLICATION_CREDENTIALS` and `serviceAccount(...)` also read the client key file that `mscli auth login` writes (`{"name": ..., "client_key": {...}}`), so you can call a service as yourself with a token that refreshes. A file that isn't a JSON object or has no `private_key` fails with a fixed message.
-- **Behavior change:** `SDKException.getStatus()` is now the gRPC status carried by the failure, with `UNAVAILABLE` as the fallback. It was `UNAVAILABLE` for every gRPC error, so a `PERMISSION_DENIED` or `NOT_FOUND` looked like an outage; code or tests that expect `UNAVAILABLE` for those errors need updating. A rejected key is `UNAUTHENTICATED`, and a token endpoint timeout or 5xx stays `UNAVAILABLE` so the call can be retried.
+- **Behavior change:** `SDKException.getStatus()` is now the gRPC status carried by the failure, with `UNAVAILABLE` as the fallback. It was `UNAVAILABLE` for every gRPC error, so a `PERMISSION_DENIED` or `NOT_FOUND` looked like an outage; code or tests that expect `UNAVAILABLE` for those errors need updating. A rejected key is `UNAUTHENTICATED`, and a token endpoint timeout, 5xx or 429 stays `UNAVAILABLE` so the call can be retried.
 
 # 1.0.0
 
