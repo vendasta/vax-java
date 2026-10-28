@@ -112,12 +112,15 @@ public class VAXCredentials extends CallCredentials {
                 headers.put(AUTHORIZATION, getAuthorizationToken());
                 metadataApplier.apply(headers);
             } catch (Throwable e) {
-                Status status = hasCause(e, IOException.class) ? Status.UNAVAILABLE : Status.UNAUTHENTICATED;
-                metadataApplier.fail(status.withCause(e));
+                metadataApplier.fail(credentialFailureStatus(e).withCause(e));
             }
         });
     }
 
+
+    static Status credentialFailureStatus(Throwable e) {
+        return hasCause(e, IOException.class) ? Status.UNAVAILABLE : Status.UNAUTHENTICATED;
+    }
 
     private static boolean hasCause(Throwable t, Class<? extends Throwable> type) {
         for (Throwable cause = t; cause != null; cause = cause.getCause()) {

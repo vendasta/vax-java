@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonObject;
+import com.google.protobuf.Empty;
 import com.google.gson.JsonParser;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -150,6 +151,28 @@ class ClientKeyFileTest {
         tokenStatus = 401;
 
         assertEquals(Status.Code.UNAUTHENTICATED, grpcFailure(new VAXCredentials(stream(clientKey()))).getCode());
+    }
+
+    @Test
+    void aRejectedKeyIsUnauthenticatedOverHttp() {
+        tokenStatus = 401;
+
+        assertEquals(Status.Code.UNAUTHENTICATED, httpFailure().getStatus().getCode());
+    }
+
+    @Test
+    void aTokenEndpointServerErrorIsUnavailableOverHttp() {
+        tokenStatus = 503;
+
+        assertEquals(Status.Code.UNAVAILABLE, httpFailure().getStatus().getCode());
+    }
+
+    private SDKException httpFailure() {
+        return assertThrows(SDKException.class, () -> {
+            try (HTTPClient client = HTTPClient.builder().host("localhost").serviceAccount(stream(clientKey())).build()) {
+                client.doRequest("/test.Service/Method", Empty.getDefaultInstance(), Empty.newBuilder(), new RequestOptions.Builder());
+            }
+        });
     }
 
     private static Status grpcFailure(VAXCredentials credentials) {

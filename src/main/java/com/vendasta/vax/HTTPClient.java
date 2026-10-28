@@ -237,7 +237,8 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
             try {
                 requestBuilder.header("Authorization", credentialsManager.getAuthorizationToken());
             } catch (Exception e) {
-                throw new SDKException("Failed to get authorization token: " + e.getMessage(), e);
+                throw new SDKException("Failed to get authorization token: " + e.getMessage(),
+                    VAXCredentials.credentialFailureStatus(e).withCause(e).asRuntimeException());
             }
         }
         

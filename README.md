@@ -218,7 +218,7 @@ try {
     
 } catch (SDKException e) {
     // getStatus() is the gRPC status carried by the failure, with UNAVAILABLE as the fallback when there is none.
-    // Credential failures are UNAUTHENTICATED over gRPC, and an unreachable host times out as DEADLINE_EXCEEDED.
+    // A rejected key is UNAUTHENTICATED, and an unreachable host times out as DEADLINE_EXCEEDED.
     if (e.getStatus().getCode() == io.grpc.Status.Code.PERMISSION_DENIED) {
         // ...
     }
