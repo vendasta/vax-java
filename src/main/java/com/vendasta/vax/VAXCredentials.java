@@ -21,6 +21,8 @@ import java.util.function.Function;
 import org.bouncycastle.openssl.PEMException;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -234,7 +236,11 @@ public class VAXCredentials extends CallCredentials {
         private HttpClient httpClient;
 
         VAXCredentialsManager(InputStream serviceAccount) throws SDKException {
-            this.creds = gson.fromJson(new InputStreamReader(serviceAccount), Credentials.class);
+            JsonObject json = JsonParser.parseReader(new InputStreamReader(serviceAccount)).getAsJsonObject();
+            if (json.has("client_key")) {
+                json = json.getAsJsonObject("client_key");
+            }
+            this.creds = gson.fromJson(json, Credentials.class);
             this.initializeCredentials();
         }
 
@@ -253,6 +259,9 @@ public class VAXCredentials extends CallCredentials {
                 .build();
 
             Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            if (creds == null || creds.privateKey == null) {
+                throw new SDKException("Credentials have no private_key: expected a service account or client key JSON");
+            }
             StringReader reader = new StringReader(creds.privateKey);
 
             Object parsed;

@@ -1,6 +1,7 @@
 # 1.1.0
 
 - `VENDASTA_ACCESS_TOKEN`: a client built without credentials sends this bearer token instead of a service account's, so you can call a service as yourself when testing locally. It takes precedence over `VENDASTA_APPLICATION_CREDENTIALS`.
+- `VENDASTA_APPLICATION_CREDENTIALS` and `serviceAccount(...)` also read the client key file that `mscli auth login` writes (`{"name": ..., "client_key": {...}}`), so you can call a service as yourself with a token that refreshes. A file without a `private_key` now fails with a clear error instead of a `NullPointerException`.
 - `SDKException.getStatus()` now returns the gRPC status the service returned. It was `UNAVAILABLE` for every gRPC error, so a `PERMISSION_DENIED` or `NOT_FOUND` looked like an outage.
 
 # 1.0.0
