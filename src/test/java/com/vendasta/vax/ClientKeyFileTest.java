@@ -4,20 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.interfaces.ECPrivateKey;
-import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,10 +41,8 @@ class ClientKeyFileTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
-        generator.initialize(new ECGenParameterSpec("secp256r1"));
-        keyPair = generator.generateKeyPair();
-        privateKeyPem = sec1Pem(keyPair);
+        keyPair = TestKeys.ecKeyPair();
+        privateKeyPem = TestKeys.sec1Pem(keyPair);
 
         sessionToken = sign(new JWTClaimsSet.Builder()
             .subject(EMAIL)
@@ -209,20 +200,6 @@ class ClientKeyFileTest {
 
     private static ByteArrayInputStream stream(JsonObject json) {
         return new ByteArrayInputStream(json.toString().getBytes(StandardCharsets.UTF_8));
-    }
-
-    // mscli writes SEC1 "EC PRIVATE KEY" PEMs that include the public key, which the key parser needs
-    private static String sec1Pem(KeyPair keyPair) throws Exception {
-        SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-        org.bouncycastle.asn1.sec.ECPrivateKey privateKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(
-            PrivateKeyInfo.getInstance(keyPair.getPrivate().getEncoded()).parsePrivateKey());
-        org.bouncycastle.asn1.sec.ECPrivateKey sec1 = new org.bouncycastle.asn1.sec.ECPrivateKey(
-            256, privateKey.getKey(), publicKeyInfo.getPublicKeyData(), publicKeyInfo.getAlgorithm().getParameters());
-        StringWriter pem = new StringWriter();
-        try (PemWriter writer = new PemWriter(pem)) {
-            writer.writeObject(new PemObject("EC PRIVATE KEY", sec1.getEncoded()));
-        }
-        return pem.toString();
     }
 
     private String sign(JWTClaimsSet claims) throws Exception {

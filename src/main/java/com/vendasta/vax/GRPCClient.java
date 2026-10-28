@@ -214,8 +214,7 @@ public abstract class GRPCClient<T extends io.grpc.stub.AbstractStub<T>> extends
         
         T stub;
         if (options.getTimeout() > 0) {
-            // Convert timeout from seconds to milliseconds
-            stub = blockingStub.withDeadlineAfter((long) (options.getTimeout() * 1000), TimeUnit.MILLISECONDS);
+            stub = blockingStub.withDeadlineAfter(options.getTimeout().longValue(), TimeUnit.MILLISECONDS);
         } else {
             // Use reasonable default timeout instead of 1 day
             stub = blockingStub.withDeadlineAfter(DEFAULT_TIMEOUT_MINUTES, TimeUnit.MINUTES);

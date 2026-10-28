@@ -38,7 +38,7 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
     private final String host;
     private final boolean secure;
     private final VAXCredentials credentialsManager;
-    private final HttpClient httpClient;
+    final HttpClient httpClient;
 
     // Protected constructor used by Builder and subclasses  
     protected HTTPClient(Builder builder) throws SDKException {
@@ -56,7 +56,7 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
         }
         
         this.httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofMillis((long)(builder.defaultTimeout * 1000)))
+            .connectTimeout(Duration.ofMillis((long) builder.defaultTimeout))
             .build();
     }
 
@@ -222,8 +222,7 @@ public abstract class HTTPClient extends VAXClient implements AutoCloseable {
         RequestOptions options = this.buildVAXOptions(builder);
         URI url = buildUrl(path);
         
-        // Convert timeout from float seconds to Duration
-        Duration timeout = Duration.ofMillis((long)(options.getTimeout() * 1000));
+        Duration timeout = Duration.ofMillis(options.getTimeout().longValue());
         
         // Build the HTTP request
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
