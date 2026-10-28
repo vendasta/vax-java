@@ -31,6 +31,10 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.sun.net.httpserver.HttpServer;
 
+import io.grpc.CallCredentials;
+import io.grpc.Metadata;
+import io.grpc.Status;
+
 class ClientKeyFileTest {
     private static final String EMAIL = "developer@example.com";
 
@@ -38,6 +42,7 @@ class ClientKeyFileTest {
     private String privateKeyPem;
     private HttpServer tokenServer;
     private String sessionToken;
+    private int tokenStatus = 200;
     private final AtomicReference<String> assertionSubject = new AtomicReference<>();
 
     @BeforeEach
@@ -61,7 +66,7 @@ class ClientKeyFileTest {
                 assertionSubject.set(null);
             }
             byte[] response = ("{\"token\":\"" + sessionToken + "\"}").getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, response.length);
+            exchange.sendResponseHeaders(tokenStatus, response.length);
             exchange.getResponseBody().write(response);
             exchange.close();
         });
@@ -131,6 +136,36 @@ class ClientKeyFileTest {
             () -> new VAXCredentials(new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8))));
 
         assertEquals(VAXCredentials.INVALID_CREDENTIALS_JSON, e.getMessage());
+    }
+
+    @Test
+    void aTokenEndpointServerErrorIsUnavailableSoTheCallCanBeRetried() throws Exception {
+        tokenStatus = 503;
+
+        assertEquals(Status.Code.UNAVAILABLE, grpcFailure(new VAXCredentials(stream(clientKey()))).getCode());
+    }
+
+    @Test
+    void aRejectedKeyIsUnauthenticated() throws Exception {
+        tokenStatus = 401;
+
+        assertEquals(Status.Code.UNAUTHENTICATED, grpcFailure(new VAXCredentials(stream(clientKey()))).getCode());
+    }
+
+    private static Status grpcFailure(VAXCredentials credentials) {
+        AtomicReference<Status> failed = new AtomicReference<>();
+        credentials.applyRequestMetadata(null, Runnable::run, new CallCredentials.MetadataApplier() {
+            @Override
+            public void apply(Metadata headers) {
+                failed.set(Status.OK);
+            }
+
+            @Override
+            public void fail(Status status) {
+                failed.set(status);
+            }
+        });
+        return failed.get();
     }
 
     private JsonObject clientKey() {

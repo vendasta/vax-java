@@ -101,11 +101,21 @@ public class VAXCredentials extends CallCredentials {
                 headers.put(AUTHORIZATION, getAuthorizationToken());
                 metadataApplier.apply(headers);
             } catch (Throwable e) {
-                metadataApplier.fail(Status.UNAUTHENTICATED.withCause(e));
+                Status status = hasCause(e, IOException.class) ? Status.UNAVAILABLE : Status.UNAUTHENTICATED;
+                metadataApplier.fail(status.withCause(e));
             }
         });
     }
 
+
+    private static boolean hasCause(Throwable t, Class<? extends Throwable> type) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (type.isInstance(cause)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Gets the current authorization token for HTTP requests.
@@ -331,6 +341,10 @@ public class VAXCredentials extends CallCredentials {
                 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 
+                if (response.statusCode() >= 500) {
+                    throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body(),
+                        new IOException("Token endpoint returned HTTP " + response.statusCode()));
+                }
                 if (response.statusCode() >= 400) {
                     throw new CredentialsException("HTTP " + response.statusCode() + ": " + response.body());
                 }
