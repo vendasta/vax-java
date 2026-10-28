@@ -16,6 +16,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import org.bouncycastle.openssl.PEMException;
@@ -52,8 +53,11 @@ import io.grpc.Status;
  */
 public class VAXCredentials extends CallCredentials {
     static final String ACCESS_TOKEN_ENV = "VENDASTA_ACCESS_TOKEN";
+    static final String APPLICATION_CREDENTIALS_ENV = "VENDASTA_APPLICATION_CREDENTIALS";
     static final String INVALID_CREDENTIALS_JSON = "Credentials must be a JSON object holding a service account or client key";
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final System.Logger LOGGER = System.getLogger(VAXCredentials.class.getName());
+    static final AtomicBoolean warnedAccessTokenOverride = new AtomicBoolean();
 
     private VAXCredentialsManager credentialsManager;
     private String staticAuthorization;
@@ -65,18 +69,22 @@ public class VAXCredentials extends CallCredentials {
 
     VAXCredentials(Function<String, String> getenv) throws SDKException {
         String accessToken = getenv.apply(ACCESS_TOKEN_ENV);
+        String serviceAccountPath = getenv.apply(APPLICATION_CREDENTIALS_ENV);
         if (accessToken != null && !accessToken.isBlank()) {
             String token = accessToken.strip();
             if (token.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
                 token = token.substring(BEARER_PREFIX.length()).strip();
             }
             this.staticAuthorization = BEARER_PREFIX + token;
+            if (serviceAccountPath != null && warnedAccessTokenOverride.compareAndSet(false, true)) {
+                LOGGER.log(System.Logger.Level.WARNING, ACCESS_TOKEN_ENV + " is set, so calls use that token and "
+                    + APPLICATION_CREDENTIALS_ENV + " is ignored");
+            }
             return;
         }
 
-        String serviceAccountPath = getenv.apply("VENDASTA_APPLICATION_CREDENTIALS");
         if (serviceAccountPath == null) {
-            throw new SDKException("VENDASTA_APPLICATION_CREDENTIALS env variable is not set.");
+            throw new SDKException("Neither " + ACCESS_TOKEN_ENV + " nor " + APPLICATION_CREDENTIALS_ENV + " env variable is set.");
         }
 
         InputStream serviceAccount;
